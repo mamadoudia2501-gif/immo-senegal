@@ -33,13 +33,16 @@ class ListingDetailScreen extends StatelessWidget {
           SliverAppBar(
             pinned: true,
             expandedHeight: 268,
-            backgroundColor: AppColors.cream,
+            backgroundColor: AppColors.primaryDark,
+            foregroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
             title: Text(listing.kind.label),
             flexibleSpace: FlexibleSpaceBar(
               background: ListingPhotoPlaceholder(
                 listing: listing,
                 height: null,
                 borderRadius: BorderRadius.zero,
+                showCaption: false,
               ),
             ),
           ),

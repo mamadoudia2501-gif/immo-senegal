@@ -10,11 +10,13 @@ class ListingPhotoPlaceholder extends StatelessWidget {
     required this.listing,
     this.height = 168,
     this.borderRadius,
+    this.showCaption = true,
   });
 
   final Listing listing;
   final double? height;
   final BorderRadius? borderRadius;
+  final bool showCaption;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +53,7 @@ class ListingPhotoPlaceholder extends StatelessWidget {
               ),
             ),
           ),
-        if (!compact)
+        if (!compact && showCaption)
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
             child: Column(
@@ -79,7 +81,7 @@ class ListingPhotoPlaceholder extends StatelessWidget {
               ],
             ),
           )
-        else
+        else if (compact)
           Center(
             child: Icon(
               listing.type.icon,
