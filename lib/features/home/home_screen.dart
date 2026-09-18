@@ -46,12 +46,12 @@ class HomeScreen extends StatelessWidget {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 240,
+                height: 262,
                 child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
                   itemCount: featured.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 14),
                   itemBuilder: (context, index) =>
                       ListingCard(listing: featured[index], compact: true),
                 ),
@@ -65,10 +65,10 @@ class HomeScreen extends StatelessWidget {
               child: SectionHeader(title: 'Récemment ajoutés'),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
               sliver: SliverList.separated(
                 itemCount: recent.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 16),
                 itemBuilder: (context, index) =>
                     ListingCard(listing: recent[index]),
               ),
@@ -88,66 +88,120 @@ class _Hero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            colors: [AppColors.primaryDark, AppColors.primary],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primaryDark, AppColors.primary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppConstants.name,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.85),
-                letterSpacing: 0.4,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Trouvez une location, une vente ou un terrain au Sénégal',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                height: 1.25,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                key: const Key('home-search-cta'),
-                onTap: onSearch,
-                borderRadius: BorderRadius.circular(14),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search_rounded, color: AppColors.primaryDark),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Ville, quartier ou type de bien…',
-                          style: TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ],
+          child: Stack(
+            children: [
+              Positioned(
+                right: -36,
+                top: -40,
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                right: 28,
+                bottom: -48,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.45),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        AppConstants.name,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Trouvez une location, une vente ou un terrain au Sénégal',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w800,
+                        height: 1.22,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      child: InkWell(
+                        key: const Key('home-search-cta'),
+                        onTap: onSearch,
+                        borderRadius: BorderRadius.circular(16),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search_rounded,
+                                color: AppColors.primaryDark,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Ville, quartier ou type de bien…',
+                                  style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -160,7 +214,7 @@ class _CategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           for (final type in ListingType.values) ...[
@@ -180,30 +234,44 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: type.color.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        key: Key('home-category-${type.name}'),
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          context.read<ListingFilterController>().apply(type: type);
-          context.go('/recherche');
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            children: [
-              Icon(type.icon, color: type.color, size: 28),
-              const SizedBox(height: 8),
-              Text(
-                type.label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: type.color,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        boxShadow: appCardShadow,
+      ),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: InkWell(
+          key: Key('home-category-${type.name}'),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          onTap: () {
+            context.read<ListingFilterController>().apply(type: type);
+            context.go('/recherche');
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: type.color.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(type.icon, color: type.color, size: 24),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  type.label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: type.color,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -218,15 +286,16 @@ class _CityChips extends StatelessWidget {
   Widget build(BuildContext context) {
     const popular = ['Dakar', 'Saly', 'Thiès', 'Saint-Louis', 'Ziguinchor'];
     return SizedBox(
-      height: 44,
+      height: 42,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
         itemCount: popular.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final city = popular[index];
           return ActionChip(
+            avatar: const Icon(Icons.place_outlined, size: 16),
             label: Text(city),
             onPressed: () {
               context.read<ListingFilterController>().apply(city: city);

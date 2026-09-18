@@ -55,7 +55,7 @@ class _ImmoAppState extends State<ImmoApp> {
           final content = child ?? const SizedBox.shrink();
           if (MediaQuery.sizeOf(context).width <= 700) return content;
           return ColoredBox(
-            color: const Color(0xFFE8E2D6),
+            color: AppColors.sand,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),

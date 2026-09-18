@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/broker_repository.dart';
 import '../../data/repositories/listing_repository.dart';
+import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/listing_card.dart';
 
 class BrokerDetailScreen extends StatelessWidget {
@@ -29,52 +30,70 @@ class BrokerDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(broker.name)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-                foregroundColor: AppColors.primaryDark,
-                child: Text(
-                  broker.initials,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              boxShadow: appCardShadow,
+            ),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    AppAvatar(
+                      initials: broker.initials,
+                      seed: broker.id,
+                      radius: 40,
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      broker.name,
+                      style: theme.textTheme.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
                     Text(
                       broker.agency,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                    const SizedBox(height: 6),
                     Text(
                       '${broker.city} · ${broker.yearsExperience} ans d’expérience',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.muted,
+                      ),
                     ),
-                    Text(
-                      broker.specialty,
-                      style: const TextStyle(
-                        color: AppColors.primaryDark,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        broker.specialty,
+                        style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             broker.bio,
-            style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+            style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
@@ -96,20 +115,15 @@ class BrokerDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.edit_note_rounded),
             label: const Text('Laisser une demande'),
           ),
-          const SizedBox(height: 24),
-          Text(
-            'Annonces de ${broker.name}',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 28),
+          Text('Annonces de ${broker.name}', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 14),
           if (listings.isEmpty)
             const Text('Aucune annonce publiée pour le moment.')
           else
             for (final listing in listings) ...[
               ListingCard(listing: listing),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
             ],
         ],
       ),

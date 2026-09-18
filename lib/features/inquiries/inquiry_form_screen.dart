@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/phone.dart';
 import '../../data/repositories/inquiry_repository.dart';
 import '../../data/repositories/listing_repository.dart';
@@ -50,7 +51,15 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Demande enregistrée sur cet appareil.')),
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white),
+            SizedBox(width: 10),
+            Expanded(child: Text('Demande enregistrée sur cet appareil.')),
+          ],
+        ),
+      ),
     );
     context.go('/demandes');
   }
@@ -66,50 +75,66 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                listing == null
-                    ? 'Décrivez votre recherche. Un courtier pourra vous recontacter (simulation locale).'
-                    : 'Le courtier recevra vos coordonnées pour cette annonce (enregistrement local).',
-                style: Theme.of(context).textTheme.bodyLarge,
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                ),
+                child: Text(
+                  listing == null
+                      ? 'Décrivez votre recherche. Un courtier pourra vous recontacter (simulation locale).'
+                      : 'Le courtier recevra vos coordonnées pour cette annonce (enregistrement local).',
+                  style: Theme.of(context).textTheme.bodyLarge
+                      ?.copyWith(color: AppColors.primaryDark),
+                ),
               ),
               if (listing != null) ...[
                 const SizedBox(height: 16),
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ListingPhotoPlaceholder(
-                        listing: listing,
-                        height: 120,
-                        borderRadius: BorderRadius.zero,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              listing.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              '${listing.locationLabel} · ${listing.priceLabel}',
-                            ),
-                          ],
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    boxShadow: appCardShadow,
+                  ),
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListingPhotoPlaceholder(
+                          listing: listing,
+                          height: 128,
+                          borderRadius: BorderRadius.zero,
                         ),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                listing.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${listing.locationLabel} · ${listing.priceLabel}',
+                                style: const TextStyle(color: AppColors.muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
               TextFormField(
                 key: const Key('inquiry-name'),
                 controller: _nameController,

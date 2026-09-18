@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../data/models/listing.dart';
 import 'listing_photo_placeholder.dart';
 
@@ -13,12 +14,17 @@ class ListingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        key: Key('listing-card-${listing.id}'),
-        onTap: () => context.push('/bien/${listing.id}'),
-        child: compact ? _compact(theme) : _regular(theme),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        boxShadow: appCardShadow,
+      ),
+      child: Card(
+        child: InkWell(
+          key: Key('listing-card-${listing.id}'),
+          onTap: () => context.push('/bien/${listing.id}'),
+          child: compact ? _compact(theme) : _regular(theme),
+        ),
       ),
     );
   }
@@ -29,10 +35,11 @@ class ListingCard extends StatelessWidget {
       children: [
         ListingPhotoPlaceholder(
           listing: listing,
+          height: 176,
           borderRadius: BorderRadius.zero,
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -40,41 +47,42 @@ class ListingCard extends StatelessWidget {
                 listing.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleMedium,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.place_outlined,
                     size: 16,
-                    color: theme.colorScheme.primary,
+                    color: AppColors.primary,
                   ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       listing.locationLabel,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: AppColors.muted,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 listing.priceLabel,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.primary,
+                  color: AppColors.primaryDark,
                   fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  letterSpacing: -0.3,
                 ),
               ),
               if (listing.rooms != null || listing.surfaceM2 != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Wrap(
-                  spacing: 12,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     if (listing.rooms != null)
                       _Meta(
@@ -98,18 +106,18 @@ class ListingCard extends StatelessWidget {
 
   Widget _compact(ThemeData theme) {
     return SizedBox(
-      width: 260,
+      width: 268,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListingPhotoPlaceholder(
             listing: listing,
-            height: 120,
+            height: 132,
             borderRadius: BorderRadius.zero,
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -117,22 +125,20 @@ class ListingCard extends StatelessWidget {
                   listing.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.titleSmall,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   listing.city,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: AppColors.muted,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
                   listing.priceLabel,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppColors.primaryDark,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -153,17 +159,24 @@ class _Meta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.sand.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: AppColors.muted),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 }

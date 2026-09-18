@@ -10,22 +10,24 @@ class BrokersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brokers = context.read<BrokerRepository>().all();
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Courtiers')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
         children: [
           Text(
             'Des professionnels basés à Dakar, sur la Petite-Côte et dans les régions.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.45,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           for (final broker in brokers) ...[
             BrokerCard(broker: broker),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
           ],
         ],
       ),
