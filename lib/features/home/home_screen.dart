@@ -8,16 +8,31 @@ import '../../data/models/listing.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/listing_card.dart';
+import '../../shared/widgets/listing_photo_placeholder.dart';
+import '../../shared/widgets/pressable.dart';
+import '../../shared/widgets/shimmer.dart';
 import '../search/listing_filter_controller.dart';
+import '../shell/catalog_ready.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final ready = context.watch<CatalogReady>().ready;
+    if (!ready) {
+      return const Scaffold(body: SafeArea(child: HomeSkeleton()));
+    }
+
     final listings = context.read<ListingRepository>();
     final featured = listings.featured();
-    final recent = listings.all().take(6).toList();
+    final spotlight = featured.first;
+    final moreFeatured = featured.skip(1).toList();
+    final recent = listings
+        .all()
+        .where((item) => item.id != spotlight.id)
+        .take(5)
+        .toList();
 
     return Scaffold(
       body: SafeArea(
@@ -28,7 +43,8 @@ class HomeScreen extends StatelessWidget {
             ),
             SliverToBoxAdapter(
               child: SectionHeader(
-                title: 'Explorer',
+                title: 'Explorer par type',
+                subtitle: 'Location, vente ou terrain',
                 actionLabel: 'Tout voir',
                 onAction: () {
                   context.read<ListingFilterController>().clear();
@@ -37,32 +53,41 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SliverToBoxAdapter(child: _CategoryRow()),
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: SectionHeader(
-                title: 'Biens en vedette',
-                actionLabel: 'Recherche',
-                onAction: () => context.go('/recherche'),
+                title: 'À la une',
+                subtitle: 'Sélection du jour à Dakar et sur la Petite-Côte',
               ),
             ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 262,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: featured.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 14),
-                  itemBuilder: (context, index) =>
-                      ListingCard(listing: featured[index], compact: true),
+            SliverToBoxAdapter(child: _Spotlight(listing: spotlight)),
+            if (moreFeatured.isNotEmpty)
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 262,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: moreFeatured.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 14),
+                    itemBuilder: (context, index) => ListingCard(
+                      listing: moreFeatured[index],
+                      compact: true,
+                    ),
+                  ),
                 ),
               ),
-            ),
             const SliverToBoxAdapter(
-              child: SectionHeader(title: 'Villes populaires'),
+              child: SectionHeader(
+                title: 'Villes populaires',
+                subtitle: 'Filtrez en un geste',
+              ),
             ),
             const SliverToBoxAdapter(child: _CityChips()),
             const SliverToBoxAdapter(
-              child: SectionHeader(title: 'Récemment ajoutés'),
+              child: SectionHeader(
+                title: 'Récemment ajoutés',
+                subtitle: 'Nouvelles annonces en FCFA',
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
@@ -74,6 +99,104 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Spotlight extends StatelessWidget {
+  const _Spotlight({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Pressable(
+        onTap: () => context.push('/bien/${listing.id}'),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+            boxShadow: appCardShadow,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+            child: Stack(
+              children: [
+                ListingPhotoPlaceholder(
+                  listing: listing,
+                  height: 228,
+                  showCaption: false,
+                  borderRadius: BorderRadius.zero,
+                ),
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x00000000), Color(0xCC053D2C)],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          TypeBadge(type: listing.type),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.gold,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'À la une',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        listing.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${listing.locationLabel} · ${listing.priceLabel}',
+                        style: const TextStyle(
+                          color: Color(0xF2FFFFFF),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -133,6 +256,14 @@ class _Hero extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'Bonjour',
+                      style: TextStyle(
+                        color: Color(0xCCFFFFFF),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -234,22 +365,21 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: appCardShadow,
-      ),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        child: InkWell(
-          key: Key('home-category-${type.name}'),
+    return Pressable(
+      onTap: () {
+        context.read<ListingFilterController>().apply(type: type);
+        context.go('/recherche');
+      },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.lg),
-          onTap: () {
-            context.read<ListingFilterController>().apply(type: type);
-            context.go('/recherche');
-          },
+          boxShadow: appCardShadow,
+        ),
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           child: Padding(
+            key: Key('home-category-${type.name}'),
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               children: [

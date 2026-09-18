@@ -11,3 +11,8 @@ String formatSenegalPhone(String input) {
   if (local.length != 9) return input.trim();
   return '+221 ${local.substring(0, 2)} ${local.substring(2, 5)} ${local.substring(5, 7)} ${local.substring(7)}';
 }
+
+String senegalWhatsAppDigits(String input) {
+  final digits = input.replaceAll(RegExp(r'\D'), '');
+  return digits.startsWith('221') ? digits : '221$digits';
+}

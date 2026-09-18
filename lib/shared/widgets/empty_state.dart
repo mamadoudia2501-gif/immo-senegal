@@ -66,11 +66,13 @@ class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
     required this.title,
+    this.subtitle,
     this.actionLabel,
     this.onAction,
   });
 
   final String title;
+  final String? subtitle;
   final String? actionLabel;
   final VoidCallback? onAction;
 
@@ -79,18 +81,32 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 18, 12, 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 4,
             height: 18,
-            margin: const EdgeInsets.only(right: 10),
+            margin: const EdgeInsets.only(right: 10, top: 4),
             decoration: BoxDecoration(
               color: AppColors.gold,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
           Expanded(
-            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleLarge),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.muted),
+                  ),
+                ],
+              ],
+            ),
           ),
           if (actionLabel != null)
             TextButton(

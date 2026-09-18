@@ -45,7 +45,7 @@ flutter test
 - **Accueil** : catégories Location / Vente / Terrain, biens en vedette, villes populaires
 - **Recherche** : filtre par ville, type de bien et fourchette de prix (FCFA)
 - **Fiche bien** : détails, courtier associé, bouton **Faire une demande**
-- **Courtiers** : annuaire, fiche, appel et e-mail
+- **Courtiers** : annuaire, fiche, appel, WhatsApp (lien mock) et e-mail
 - **Demandes** : formulaire (nom, téléphone sénégalais, message) enregistré **localement** sur l’appareil
 - **Profil** : mode visiteur, langue FR, devise FCFA
 

@@ -10,6 +10,7 @@ import 'data/repositories/broker_repository.dart';
 import 'data/repositories/inquiry_repository.dart';
 import 'data/repositories/listing_repository.dart';
 import 'features/search/listing_filter_controller.dart';
+import 'features/shell/catalog_ready.dart';
 
 class ImmoApp extends StatefulWidget {
   const ImmoApp({
@@ -17,11 +18,13 @@ class ImmoApp extends StatefulWidget {
     required this.inquiryRepository,
     this.listingRepository = const ListingRepository(),
     this.brokerRepository = const BrokerRepository(),
+    this.mockLoadDelay = const Duration(milliseconds: 320),
   });
 
   final InquiryRepository inquiryRepository;
   final ListingRepository listingRepository;
   final BrokerRepository brokerRepository;
+  final Duration mockLoadDelay;
 
   @override
   State<ImmoApp> createState() => _ImmoAppState();
@@ -38,6 +41,9 @@ class _ImmoAppState extends State<ImmoApp> {
         Provider.value(value: widget.brokerRepository),
         ChangeNotifierProvider.value(value: widget.inquiryRepository),
         ChangeNotifierProvider(create: (_) => ListingFilterController()),
+        ChangeNotifierProvider(
+          create: (_) => CatalogReady(delay: widget.mockLoadDelay),
+        ),
       ],
       child: MaterialApp.router(
         title: AppConstants.name,

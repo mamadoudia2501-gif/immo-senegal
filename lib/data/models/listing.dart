@@ -101,6 +101,14 @@ class Listing {
     return type == ListingType.location ? '$amount / mois' : amount;
   }
 
-  Color get placeholderColor =>
-      HSVColor.fromAHSV(1, placeholderHue, 0.42, 0.62).toColor();
+  Color get placeholderColor => colorForHue(placeholderHue);
+
+  List<double> get galleryHues => [
+    placeholderHue,
+    (placeholderHue + 22) % 360,
+    (placeholderHue + 46) % 360,
+  ];
+
+  static Color colorForHue(double hue) =>
+      HSVColor.fromAHSV(1, hue, 0.42, 0.62).toColor();
 }

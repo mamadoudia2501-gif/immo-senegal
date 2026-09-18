@@ -16,7 +16,9 @@ Future<void> _pumpApp(WidgetTester tester) async {
     preferences: await SharedPreferences.getInstance(),
   );
   await inquiries.load();
-  await tester.pumpWidget(ImmoApp(inquiryRepository: inquiries));
+  await tester.pumpWidget(
+    ImmoApp(inquiryRepository: inquiries, mockLoadDelay: Duration.zero),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -42,6 +44,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Terrain'), findsWidgets);
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('listing-card-l3')),
+      280,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('search-results')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('listing-card-l3')));
     await tester.pumpAndSettle();
     expect(find.text('Faire une demande'), findsOneWidget);

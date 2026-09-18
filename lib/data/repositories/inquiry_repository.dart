@@ -13,6 +13,7 @@ class InquiryRepository extends ChangeNotifier {
   SharedPreferences? _preferences;
   final List<Inquiry> _inquiries = [];
   bool _loaded = false;
+  String? latestId;
 
   List<Inquiry> get inquiries => List.unmodifiable(_inquiries);
   bool get isLoaded => _loaded;
@@ -42,6 +43,7 @@ class InquiryRepository extends ChangeNotifier {
       createdAt: DateTime.now(),
     );
     _inquiries.insert(0, inquiry);
+    latestId = inquiry.id;
     await _persist();
     notifyListeners();
     return inquiry;

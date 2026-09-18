@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/listing.dart';
 import 'listing_photo_placeholder.dart';
+import 'pressable.dart';
 
 class ListingCard extends StatelessWidget {
   const ListingCard({super.key, required this.listing, this.compact = false});
@@ -14,17 +15,15 @@ class ListingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: appCardShadow,
-      ),
-      child: Card(
-        child: InkWell(
-          key: Key('listing-card-${listing.id}'),
-          onTap: () => context.push('/bien/${listing.id}'),
-          child: compact ? _compact(theme) : _regular(theme),
+    return Pressable(
+      key: Key('listing-card-${listing.id}'),
+      onTap: () => context.push('/bien/${listing.id}'),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          boxShadow: appCardShadow,
         ),
+        child: Card(child: compact ? _compact(theme) : _regular(theme)),
       ),
     );
   }

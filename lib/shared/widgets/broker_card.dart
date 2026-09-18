@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/broker.dart';
 import 'app_avatar.dart';
+import 'pressable.dart';
 
 class BrokerCard extends StatelessWidget {
   const BrokerCard({super.key, required this.broker});
@@ -13,26 +14,26 @@ class BrokerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: appCardShadow,
-      ),
-      child: Card(
-        child: InkWell(
-          key: Key('broker-card-${broker.id}'),
+    return Pressable(
+      key: Key('broker-card-${broker.id}'),
+      onTap: () => context.push('/courtier/${broker.id}'),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.lg),
-          onTap: () => context.push('/courtier/${broker.id}'),
+          boxShadow: appCardShadow,
+        ),
+        child: Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 18, 14, 18),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppAvatar(
                   initials: broker.initials,
                   seed: broker.id,
-                  radius: 30,
+                  radius: 32,
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,28 +47,57 @@ class BrokerCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                      Text(
+                        broker.bio,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.ink,
+                          height: 1.4,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          broker.specialty,
-                          style: const TextStyle(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySoft,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              broker.specialty,
+                              style: const TextStyle(
+                                color: AppColors.primaryDark,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
-                        ),
+                          Text(
+                            '${broker.yearsExperience} ans d’expérience',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.muted,
+                  ),
+                ),
               ],
             ),
           ),

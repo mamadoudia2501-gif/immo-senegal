@@ -9,6 +9,7 @@ import '../../features/listings/listing_detail_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/shell/main_shell.dart';
+import 'fade_slide_page.dart';
 
 GoRouter createRouter() {
   return GoRouter(
@@ -68,18 +69,25 @@ GoRouter createRouter() {
       ),
       GoRoute(
         path: '/bien/:id',
-        builder: (context, state) =>
-            ListingDetailScreen(listingId: state.pathParameters['id']!),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: ListingDetailScreen(listingId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/courtier/:id',
-        builder: (context, state) =>
-            BrokerDetailScreen(brokerId: state.pathParameters['id']!),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: BrokerDetailScreen(brokerId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/demande/nouvelle',
-        builder: (context, state) => InquiryFormScreen(
-          listingId: state.uri.queryParameters['listingId'],
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: InquiryFormScreen(
+            listingId: state.uri.queryParameters['listingId'],
+          ),
         ),
       ),
     ],

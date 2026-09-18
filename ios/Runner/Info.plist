@@ -12,6 +12,8 @@
 	<array>
 		<string>tel</string>
 		<string>mailto</string>
+		<string>whatsapp</string>
+		<string>https</string>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>

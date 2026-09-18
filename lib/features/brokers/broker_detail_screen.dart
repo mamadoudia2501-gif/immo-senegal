@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/launchers.dart';
 import '../../data/repositories/broker_repository.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
@@ -30,27 +30,27 @@ class BrokerDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(broker.name)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadii.lg),
+              borderRadius: BorderRadius.circular(AppRadii.xl),
               boxShadow: appCardShadow,
             ),
             child: Card(
               child: Padding(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
                 child: Column(
                   children: [
                     AppAvatar(
                       initials: broker.initials,
                       seed: broker.id,
-                      radius: 40,
+                      radius: 44,
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                     Text(
                       broker.name,
-                      style: theme.textTheme.titleLarge,
+                      style: theme.textTheme.headlineSmall,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
@@ -67,7 +67,7 @@ class BrokerDetailScreen extends StatelessWidget {
                         color: AppColors.muted,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -90,24 +90,46 @@ class BrokerDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
+          Text('À propos', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
           Text(
             broker.bio,
-            style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+            style: theme.textTheme.bodyLarge?.copyWith(height: 1.55),
           ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            key: const Key('broker-call-cta'),
-            onPressed: () =>
-                launchUrl(Uri.parse('tel:${broker.phone.replaceAll(' ', '')}')),
-            icon: const Icon(Icons.phone_rounded),
-            label: Text('Appeler · ${broker.phone}'),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  key: const Key('broker-call-cta'),
+                  onPressed: () => launchPhone(broker.phone),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  icon: const Icon(Icons.phone_rounded),
+                  label: const Text('Appeler'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('broker-whatsapp-cta'),
+                  onPressed: () => launchWhatsApp(broker.phone),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  icon: const Icon(Icons.chat_rounded),
+                  label: const Text('WhatsApp'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           OutlinedButton.icon(
-            onPressed: () => launchUrl(Uri.parse('mailto:${broker.email}')),
+            onPressed: () => launchMail(broker.email),
             icon: const Icon(Icons.mail_outline_rounded),
-            label: const Text('Envoyer un e-mail'),
+            label: Text(broker.email),
           ),
           const SizedBox(height: 10),
           OutlinedButton.icon(
@@ -123,7 +145,7 @@ class BrokerDetailScreen extends StatelessWidget {
           else
             for (final listing in listings) ...[
               ListingCard(listing: listing),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
             ],
         ],
       ),

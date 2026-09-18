@@ -52,11 +52,14 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
+        duration: Duration(seconds: 3),
         content: Row(
           children: [
             Icon(Icons.check_circle_rounded, color: Colors.white),
             SizedBox(width: 10),
-            Expanded(child: Text('Demande enregistrée sur cet appareil.')),
+            Expanded(
+              child: Text('Demande envoyée. Consultez l’onglet Demandes.'),
+            ),
           ],
         ),
       ),

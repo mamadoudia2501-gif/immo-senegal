@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/launchers.dart';
 import '../../data/repositories/broker_repository.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
+import '../../shared/widgets/listing_gallery.dart';
 import '../../shared/widgets/listing_photo_placeholder.dart';
 
 class ListingDetailScreen extends StatelessWidget {
@@ -32,18 +33,13 @@ class ListingDetailScreen extends StatelessWidget {
         slivers: [
           SliverAppBar(
             pinned: true,
-            expandedHeight: 268,
+            expandedHeight: 300,
             backgroundColor: AppColors.primaryDark,
             foregroundColor: Colors.white,
             surfaceTintColor: Colors.transparent,
             title: Text(listing.kind.label),
             flexibleSpace: FlexibleSpaceBar(
-              background: ListingPhotoPlaceholder(
-                listing: listing,
-                height: null,
-                borderRadius: BorderRadius.zero,
-                showCaption: false,
-              ),
+              background: ListingGallery(listing: listing),
             ),
           ),
           SliverToBoxAdapter(
@@ -74,38 +70,9 @@ class ListingDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Prix',
-                          style: TextStyle(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          listing.priceLabel,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: AppColors.primaryDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       if (listing.rooms != null)
                         _Fact(
@@ -117,6 +84,10 @@ class ListingDetailScreen extends StatelessWidget {
                           icon: Icons.square_foot,
                           label: '${listing.surfaceM2} m²',
                         ),
+                      _Fact(
+                        icon: Icons.location_city_outlined,
+                        label: listing.neighborhood,
+                      ),
                       _Fact(icon: listing.type.icon, label: listing.type.label),
                       const _Fact(
                         icon: Icons.payments_outlined,
@@ -165,7 +136,7 @@ class ListingDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 108),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
@@ -174,29 +145,73 @@ class ListingDetailScreen extends StatelessWidget {
       ),
       bottomNavigationBar: Material(
         color: Colors.white,
-        elevation: 10,
+        elevation: 18,
         shadowColor: AppColors.cardShadow,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: Row(
-              children: [
-                if (broker != null)
-                  IconButton.filledTonal(
-                    tooltip: 'Appeler le courtier',
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.primarySoft,
-                      foregroundColor: AppColors.primaryDark,
-                      minimumSize: const Size(52, 52),
-                    ),
-                    onPressed: () => launchUrl(
-                      Uri.parse('tel:${broker.phone.replaceAll(' ', '')}'),
-                    ),
-                    icon: const Icon(Icons.phone_rounded),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: Color(0xFFE4D9C8))),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Prix',
+                              style: TextStyle(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                            Text(
+                              listing.priceLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.primaryDark,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (broker != null) ...[
+                        IconButton.filledTonal(
+                          tooltip: 'Appeler',
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppColors.primarySoft,
+                            foregroundColor: AppColors.primaryDark,
+                            minimumSize: const Size(48, 48),
+                          ),
+                          onPressed: () => launchPhone(broker.phone),
+                          icon: const Icon(Icons.phone_rounded),
+                        ),
+                        const SizedBox(width: 6),
+                        IconButton.filledTonal(
+                          tooltip: 'WhatsApp',
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppColors.sand,
+                            foregroundColor: AppColors.primaryDark,
+                            minimumSize: const Size(48, 48),
+                          ),
+                          onPressed: () => launchWhatsApp(broker.phone),
+                          icon: const Icon(Icons.chat_rounded),
+                        ),
+                      ],
+                    ],
                   ),
-                if (broker != null) const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton.icon(
+                  const SizedBox(height: 10),
+                  FilledButton.icon(
                     key: const Key('listing-inquiry-cta'),
                     onPressed: () => context.push(
                       '/demande/nouvelle?listingId=${listing.id}',
@@ -204,8 +219,8 @@ class ListingDetailScreen extends StatelessWidget {
                     icon: const Icon(Icons.edit_note_rounded),
                     label: const Text('Faire une demande'),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -226,7 +241,7 @@ class _Fact extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE4D9C8)),
       ),
       child: Row(

@@ -5,8 +5,10 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/listing.dart';
 import '../../data/repositories/listing_repository.dart';
-import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/illustrated_empty.dart';
 import '../../shared/widgets/listing_card.dart';
+import '../../shared/widgets/shimmer.dart';
+import '../shell/catalog_ready.dart';
 import 'listing_filter_controller.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -51,6 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bootstrapped = context.watch<CatalogReady>().ready;
     final filters = context.watch<ListingFilterController>();
     final results = context.read<ListingRepository>().search(
       query: filters.query,
@@ -63,37 +66,68 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(title: const Text('Recherche')),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: TextField(
-              key: const Key('search-query-field'),
-              controller: _queryController,
-              onChanged: filters.setQuery,
-              textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                hintText: 'Rechercher un bien, un quartier…',
-                prefixIcon: Icon(Icons.search_rounded),
+          Material(
+            color: AppColors.cream,
+            elevation: 0,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xE6E4D9C8))),
               ),
-            ),
-          ),
-          _FilterBar(filters: filters),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '${results.length} bien${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                    child: TextField(
+                      key: const Key('search-query-field'),
+                      controller: _queryController,
+                      onChanged: filters.setQuery,
+                      textInputAction: TextInputAction.search,
+                      decoration: const InputDecoration(
+                        hintText: 'Rechercher un bien, un quartier…',
+                        prefixIcon: Icon(Icons.search_rounded),
+                      ),
+                    ),
+                  ),
+                  _FilterBar(filters: filters),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${results.length} bien${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                        if (filters.hasActiveFilters)
+                          TextButton(
+                            onPressed: filters.clear,
+                            child: const Text('Effacer les filtres'),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
           Expanded(
-            child: results.isEmpty
-                ? EmptyState(
-                    icon: Icons.search_off_rounded,
+            child: !bootstrapped
+                ? ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    children: const [
+                      ListingSkeleton(),
+                      SizedBox(height: 16),
+                      ListingSkeleton(),
+                    ],
+                  )
+                : results.isEmpty
+                ? IllustratedEmpty(
+                    illustration: EmptyIllustration.search,
                     title: 'Aucun bien ne correspond',
                     message: 'Essayez une autre ville, un autre type (location, vente, terrain) ou élargissez le budget en FCFA.',
                     actionLabel: filters.hasActiveFilters
@@ -102,6 +136,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onAction: filters.hasActiveFilters ? filters.clear : null,
                   )
                 : ListView.separated(
+                    key: const Key('search-results'),
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                     itemCount: results.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 16),
@@ -156,6 +191,12 @@ class _FilterBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
             children: [
+              ActionChip(
+                avatar: const Icon(Icons.tune_rounded, size: 16),
+                label: const Text('Filtres'),
+                onPressed: () => _openAllFilters(context, filters),
+              ),
+              const SizedBox(width: 8),
               FilterChip(
                 avatar: const Icon(Icons.place_outlined, size: 16),
                 label: Text(filters.city ?? 'Toutes les villes'),
@@ -172,18 +213,92 @@ class _FilterBar extends StatelessWidget {
                 showCheckmark: false,
                 onSelected: (_) => _pickPrice(context, filters),
               ),
-              if (filters.hasActiveFilters) ...[
-                const SizedBox(width: 8),
-                ActionChip(
-                  avatar: const Icon(Icons.close, size: 16),
-                  label: const Text('Effacer'),
-                  onPressed: filters.clear,
-                ),
-              ],
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _openAllFilters(
+    BuildContext context,
+    ListingFilterController filters,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Filtrer les biens',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              const Text('Type', style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  FilterChip(
+                    label: const Text('Tous'),
+                    selected: filters.type == null,
+                    showCheckmark: false,
+                    onSelected: (_) {
+                      filters.setType(null);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  for (final type in ListingType.values)
+                    FilterChip(
+                      label: Text(type.label),
+                      selected: filters.type == type,
+                      showCheckmark: false,
+                      onSelected: (_) {
+                        filters.setType(type);
+                        Navigator.pop(context);
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.place_outlined),
+                title: Text(filters.city ?? 'Toutes les villes'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickCity(context, filters);
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.payments_outlined),
+                title: Text(filters.priceRange.label),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickPrice(context, filters);
+                },
+              ),
+              if (filters.hasActiveFilters)
+                TextButton(
+                  onPressed: () {
+                    filters.clear();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Effacer les filtres'),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
