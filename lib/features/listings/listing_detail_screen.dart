@@ -8,6 +8,7 @@ import '../../core/utils/phone.dart';
 import '../../data/models/listing.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/broker_repository.dart';
+import '../../data/repositories/conversation_repository.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../data/repositories/story_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
@@ -21,7 +22,9 @@ class ListingDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listing = context.read<ListingRepository>().byId(listingId);
+    final listing = context.watch<ListingRepository>().byId(listingId);
+    final auth = context.watch<AuthRepository>();
+    final conversations = context.watch<ConversationRepository>();
     if (listing == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Bien introuvable')),
@@ -33,6 +36,12 @@ class ListingDetailScreen extends StatelessWidget {
         ? null
         : context.read<BrokerRepository>().byId(listing.brokerId!);
     final theme = Theme.of(context);
+    final existingConversation = auth.currentUser == null
+        ? null
+        : conversations.forListing(
+            listingId: listing.id,
+            phone: auth.currentUser!.phone,
+          );
 
     return Scaffold(
       body: CustomScrollView(
@@ -265,14 +274,24 @@ class ListingDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  FilledButton.icon(
-                    key: const Key('listing-inquiry-cta'),
-                    onPressed: () => context.push(
-                      '/demande/nouvelle?listingId=${listing.id}',
+                  if (existingConversation != null)
+                    FilledButton.icon(
+                      key: const Key('listing-continue-chat'),
+                      onPressed: () => context.push(
+                        '/discussion/${existingConversation.id}',
+                      ),
+                      icon: const Icon(Icons.forum_rounded),
+                      label: const Text('Continuer la discussion'),
+                    )
+                  else
+                    FilledButton.icon(
+                      key: const Key('listing-inquiry-cta'),
+                      onPressed: () => context.push(
+                        '/demande/nouvelle?listingId=${listing.id}',
+                      ),
+                      icon: const Icon(Icons.edit_note_rounded),
+                      label: const Text('Faire une demande'),
                     ),
-                    icon: const Icon(Icons.edit_note_rounded),
-                    label: const Text('Faire une demande'),
-                  ),
                 ],
               ),
             ),

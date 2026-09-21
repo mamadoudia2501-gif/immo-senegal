@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/phone.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../data/repositories/broker_repository.dart';
+import '../../data/repositories/conversation_repository.dart';
 import '../../data/repositories/inquiry_repository.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/listing_photo_placeholder.dart';
@@ -23,6 +26,8 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
   final _phoneController = TextEditingController();
   final _messageController = TextEditingController();
   bool _submitting = false;
+  bool _lockedIdentity = false;
+  var _prefilled = false;
 
   @override
   void initState() {
@@ -31,6 +36,20 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
       _messageController.text =
           'Bonjour, je suis intéressé(e) par cette annonce et souhaite être recontacté(e).';
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_prefilled) return;
+    _prefilled = true;
+    final user = context.read<AuthRepository>().currentUser;
+    if (user == null) return;
+    _lockedIdentity = true;
+    if ((user.displayName ?? '').trim().isNotEmpty) {
+      _nameController.text = user.displayName!.trim();
+    }
+    _phoneController.text = senegalLocalDigits(user.phone);
   }
 
   @override
@@ -44,14 +63,36 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _submitting = true);
-    await context.read<InquiryRepository>().add(
+    final inquiry = await context.read<InquiryRepository>().add(
       name: _nameController.text,
       phone: formatSenegalPhone(_phoneController.text),
       message: _messageController.text,
       listingId: widget.listingId,
     );
     if (!mounted) return;
-    context.go('/demandes');
+    final listings = context.read<ListingRepository>();
+    final listing = inquiry.listingId == null
+        ? null
+        : listings.byId(inquiry.listingId!);
+    final conversation = context
+        .read<ConversationRepository>()
+        .startFromInquiry(
+          inquiry: inquiry,
+          listing: listing,
+          advertiserPhone: ConversationRepository.ownerPhone(
+            listing: listing,
+            brokers: context.read<BrokerRepository>(),
+          ),
+        );
+    final auth = context.read<AuthRepository>();
+    final chatPath = '/discussion/${conversation.id}';
+    if (auth.isLoggedIn) {
+      context.go(chatPath);
+      return;
+    }
+    await auth.requestCode(phone: inquiry.phone, name: inquiry.name);
+    if (!mounted) return;
+    context.go('/connexion/code?next=${Uri.encodeQueryComponent(chatPath)}');
   }
 
   @override
@@ -77,8 +118,8 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
                 ),
                 child: Text(
                   listing == null
-                      ? 'Décrivez votre recherche. Un courtier pourra vous recontacter (simulation locale).'
-                      : 'Le courtier recevra vos coordonnées pour cette annonce (enregistrement local).',
+                      ? 'Décrivez votre recherche. Après envoi, la discussion continue dans l’application.'
+                      : 'Envoyez votre message : un fil de discussion s’ouvre avec l’annonceur, dans l’application.',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.copyWith(color: AppColors.primaryDark),
@@ -145,11 +186,15 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
               TextFormField(
                 key: const Key('inquiry-phone'),
                 controller: _phoneController,
+                enabled: !_lockedIdentity,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Téléphone (Sénégal)',
                   hintText: '77 123 45 67',
-                  prefixIcon: Icon(Icons.phone_outlined),
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  helperText: _lockedIdentity
+                      ? 'Numéro de votre compte — requis pour continuer le chat.'
+                      : 'Un code WhatsApp mock confirmera ce numéro pour le chat.',
                 ),
                 validator: (value) {
                   if (!isValidSenegalPhone(value ?? '')) {

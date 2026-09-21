@@ -47,9 +47,9 @@ class MainShell extends StatelessWidget {
               label: 'Courtiers',
             ),
             NavigationDestination(
-              icon: Icon(Icons.mail_outline_rounded),
-              selectedIcon: Icon(Icons.mail_rounded),
-              label: 'Demandes',
+              icon: Icon(Icons.forum_outlined),
+              selectedIcon: Icon(Icons.forum_rounded),
+              label: 'Discussions',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline_rounded),

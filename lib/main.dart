@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/conversation_repository.dart';
 import 'data/repositories/inquiry_repository.dart';
 import 'data/repositories/listing_repository.dart';
 import 'data/repositories/story_repository.dart';
@@ -16,11 +17,13 @@ Future<void> main() async {
   final auth = AuthRepository(preferences: preferences);
   final listings = ListingRepository(preferences: preferences);
   final stories = StoryRepository(preferences: preferences);
+  final conversations = ConversationRepository(preferences: preferences);
   await Future.wait([
     inquiries.load(),
     auth.load(),
     listings.load(),
     stories.load(),
+    conversations.load(),
   ]);
   runApp(
     ImmoApp(
@@ -28,6 +31,7 @@ Future<void> main() async {
       authRepository: auth,
       listingRepository: listings,
       storyRepository: stories,
+      conversationRepository: conversations,
     ),
   );
 }

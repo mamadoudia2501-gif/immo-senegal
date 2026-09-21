@@ -8,6 +8,7 @@ import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/broker_repository.dart';
+import 'data/repositories/conversation_repository.dart';
 import 'data/repositories/inquiry_repository.dart';
 import 'data/repositories/listing_repository.dart';
 import 'data/repositories/story_repository.dart';
@@ -21,14 +22,18 @@ class ImmoApp extends StatefulWidget {
     required this.authRepository,
     required this.listingRepository,
     StoryRepository? storyRepository,
+    ConversationRepository? conversationRepository,
     this.brokerRepository = const BrokerRepository(),
     this.mockLoadDelay = const Duration(milliseconds: 320),
-  }) : storyRepository = storyRepository ?? StoryRepository();
+  }) : storyRepository = storyRepository ?? StoryRepository(),
+       conversationRepository =
+           conversationRepository ?? ConversationRepository();
 
   final InquiryRepository inquiryRepository;
   final AuthRepository authRepository;
   final ListingRepository listingRepository;
   final StoryRepository storyRepository;
+  final ConversationRepository conversationRepository;
   final BrokerRepository brokerRepository;
   final Duration mockLoadDelay;
 
@@ -48,6 +53,7 @@ class _ImmoAppState extends State<ImmoApp> {
         ChangeNotifierProvider.value(value: widget.inquiryRepository),
         ChangeNotifierProvider.value(value: widget.authRepository),
         ChangeNotifierProvider.value(value: widget.storyRepository),
+        ChangeNotifierProvider.value(value: widget.conversationRepository),
         ChangeNotifierProvider(create: (_) => ListingFilterController()),
         ChangeNotifierProvider(
           create: (_) => CatalogReady(delay: widget.mockLoadDelay),

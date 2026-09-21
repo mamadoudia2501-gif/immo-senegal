@@ -9,7 +9,8 @@ import '../../features/auth/whatsapp_code_screen.dart';
 import '../../features/brokers/broker_detail_screen.dart';
 import '../../features/brokers/brokers_screen.dart';
 import '../../features/home/home_screen.dart';
-import '../../features/inquiries/inquiries_screen.dart';
+import '../../features/inquiries/chat_screen.dart';
+import '../../features/inquiries/conversations_screen.dart';
 import '../../features/inquiries/inquiry_form_screen.dart';
 import '../../features/listings/create_listing_screen.dart';
 import '../../features/listings/listing_detail_screen.dart';
@@ -36,6 +37,9 @@ GoRouter createRouter(AuthRepository auth) {
       }
       if ((path == '/statuts/nouveau' || path == '/profil/completer') &&
           !auth.isLoggedIn) {
+        return '/connexion?next=$path';
+      }
+      if (path.startsWith('/discussion/') && !auth.isLoggedIn) {
         return '/connexion?next=$path';
       }
       if (path == '/connexion/code' &&
@@ -83,7 +87,7 @@ GoRouter createRouter(AuthRepository auth) {
               GoRoute(
                 path: '/demandes',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: InquiriesScreen()),
+                    const NoTransitionPage(child: ConversationsScreen()),
               ),
             ],
           ),
@@ -188,6 +192,13 @@ GoRouter createRouter(AuthRepository auth) {
         path: '/profil/completer',
         pageBuilder: (context, state) =>
             fadeSlidePage(key: state.pageKey, child: const EditProfileScreen()),
+      ),
+      GoRoute(
+        path: '/discussion/:id',
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: ChatScreen(conversationId: state.pathParameters['id']!),
+        ),
       ),
     ],
   );

@@ -96,9 +96,17 @@ void main() {
     await tester.tap(find.byKey(const Key('inquiry-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Demandes'), findsWidgets);
-    expect(find.text('Awa Ndiaye'), findsOneWidget);
+    expect(find.text(AppConstants.whatsappDemoCode), findsWidgets);
+    await tester.enterText(
+      find.byKey(const Key('auth-code')),
+      AppConstants.whatsappDemoCode,
+    );
+    await tester.tap(find.byKey(const Key('auth-verify')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('chat-input')), findsOneWidget);
     expect(find.textContaining('Bargny'), findsWidgets);
+    expect(find.textContaining('Terrain viabilisé'), findsWidgets);
   });
 
   testWidgets('annuaire des courtiers', (tester) async {
