@@ -48,29 +48,46 @@ class ListingRepository extends ChangeNotifier {
     String query = '',
     String? city,
     ListingType? type,
-    PriceRange priceRange = PriceRange.all,
+    PropertyKind? kind,
+    ApartmentLayout? apartmentLayout,
+    VillaStyle? villaStyle,
+    int? minFcfa,
+    int? maxFcfa,
+    bool recentOnly = false,
   }) {
     final needle = query.trim().toLowerCase();
-    return all()
-        .where((listing) {
-          if (city != null && listing.city != city) return false;
-          if (type != null && listing.type != type) return false;
-          if (priceRange.minFcfa != null &&
-              listing.priceFcfa < priceRange.minFcfa!) {
-            return false;
-          }
-          if (priceRange.maxFcfa != null &&
-              listing.priceFcfa > priceRange.maxFcfa!) {
-            return false;
-          }
-          if (needle.isEmpty) return true;
-          final haystack =
-              '${listing.title} ${listing.city} ${listing.neighborhood} '
-                      '${listing.kind.label} ${listing.description}'
-                  .toLowerCase();
-          return haystack.contains(needle);
-        })
-        .toList(growable: false);
+    final cutoff = DateTime(2026, 8, 1);
+    final results = all().where((listing) {
+      if (city != null && listing.city != city) return false;
+      if (type != null && listing.type != type) return false;
+      if (kind != null) {
+        if (kind == PropertyKind.appartement) {
+          if (listing.kind != PropertyKind.appartement) return false;
+        } else if (listing.kind != kind) {
+          return false;
+        }
+      }
+      if (apartmentLayout != null) {
+        if (listing.apartmentLayout != apartmentLayout) return false;
+      }
+      if (villaStyle != null && listing.villaStyle != villaStyle) {
+        return false;
+      }
+      if (minFcfa != null && listing.priceFcfa < minFcfa) return false;
+      if (maxFcfa != null && listing.priceFcfa > maxFcfa) return false;
+      if (recentOnly && listing.listedAt.isBefore(cutoff)) return false;
+      if (needle.isEmpty) return true;
+      final haystack =
+          '${listing.title} ${listing.city} ${listing.neighborhood} '
+                  '${listing.kind.label} ${listing.layoutLabel ?? ''} '
+                  '${listing.description}'
+              .toLowerCase();
+      return haystack.contains(needle);
+    }).toList();
+    if (recentOnly) {
+      results.sort((a, b) => b.listedAt.compareTo(a.listedAt));
+    }
+    return results;
   }
 
   Future<void> load() async {

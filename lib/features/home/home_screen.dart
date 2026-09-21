@@ -425,7 +425,14 @@ class _CityChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const popular = ['Dakar', 'Saly', 'Thiès', 'Saint-Louis', 'Ziguinchor'];
+    const popular = [
+      'Dakar',
+      'Pikine',
+      'Saly',
+      'Thiès',
+      'Rufisque',
+      'Saint-Louis',
+    ];
     return SizedBox(
       height: 42,
       child: ListView.separated(

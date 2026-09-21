@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/launchers.dart';
+import '../../data/models/listing.dart';
 import '../../data/repositories/broker_repository.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
@@ -76,7 +77,14 @@ class ListingDetailScreen extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (listing.rooms != null)
+                      if (listing.layoutLabel != null)
+                        _Fact(
+                          icon: listing.kind == PropertyKind.villa
+                              ? Icons.villa_outlined
+                              : Icons.bed_outlined,
+                          label: listing.layoutLabel!,
+                        )
+                      else if (listing.rooms != null)
                         _Fact(
                           icon: Icons.bed_outlined,
                           label: '${listing.rooms} pièces',
@@ -91,9 +99,13 @@ class ListingDetailScreen extends StatelessWidget {
                         label: listing.neighborhood,
                       ),
                       _Fact(icon: listing.type.icon, label: listing.type.label),
-                      const _Fact(
+                      _Fact(
                         icon: Icons.payments_outlined,
-                        label: 'Prix en FCFA',
+                        label: listing.type == ListingType.location
+                            ? 'Loyer / mois'
+                            : listing.type == ListingType.vente
+                            ? 'Prix de vente'
+                            : 'Prix du terrain',
                       ),
                     ],
                   ),
@@ -179,9 +191,13 @@ class ListingDetailScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Prix',
-                              style: TextStyle(
+                            Text(
+                              listing.type == ListingType.location
+                                  ? 'Loyer / mois'
+                                  : listing.type == ListingType.vente
+                                  ? 'Prix de vente'
+                                  : 'Prix du terrain',
+                              style: const TextStyle(
                                 color: AppColors.muted,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 11,

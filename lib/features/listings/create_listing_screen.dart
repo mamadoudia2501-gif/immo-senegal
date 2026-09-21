@@ -27,6 +27,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _descriptionController = TextEditingController();
   var _type = ListingType.vente;
   var _kind = PropertyKind.maison;
+  var _layout = ApartmentLayout.f3;
+  var _villaStyle = VillaStyle.basique;
   var _city = AppConstants.cities.first;
   var _submitting = false;
 
@@ -80,8 +82,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       description: _descriptionController.text.trim(),
       placeholderHue: (user.phone.hashCode.abs() % 300).toDouble() + 20,
       publisherPhone: user.phone,
-      rooms: _type == ListingType.terrain ? null : rooms,
+      rooms: _type == ListingType.terrain
+          ? null
+          : _kind == PropertyKind.appartement
+          ? _layout.rooms
+          : _kind == PropertyKind.studio
+          ? 1
+          : rooms,
       surfaceM2: surface,
+      villaStyle: _kind == PropertyKind.villa ? _villaStyle : null,
+      listedAt: DateTime.now(),
       wasPaid: slot == ListingSlot.paid,
     );
     await context.read<ListingRepository>().add(listing);
@@ -188,13 +198,48 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final kind in PropertyKind.values)
-                    if (kind != PropertyKind.terrain)
+                  for (final kind in PropertyKind.housing)
+                    ChoiceChip(
+                      label: Text(kind.label),
+                      selected: _kind == kind,
+                      onSelected: (_) => setState(() => _kind = kind),
+                    ),
+                ],
+              ),
+            ],
+            if (_type != ListingType.terrain &&
+                _kind == PropertyKind.appartement) ...[
+              const SizedBox(height: 14),
+              Text('Typologie', style: theme.textTheme.titleSmall),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final layout in ApartmentLayout.values)
+                    if (layout != ApartmentLayout.studio)
                       ChoiceChip(
-                        label: Text(kind.label),
-                        selected: _kind == kind,
-                        onSelected: (_) => setState(() => _kind = kind),
+                        label: Text(layout.label),
+                        selected: _layout == layout,
+                        onSelected: (_) => setState(() => _layout = layout),
                       ),
+                ],
+              ),
+            ],
+            if (_type != ListingType.terrain &&
+                _kind == PropertyKind.villa) ...[
+              const SizedBox(height: 14),
+              Text('Style de villa', style: theme.textTheme.titleSmall),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final style in VillaStyle.values)
+                    ChoiceChip(
+                      label: Text(style.label),
+                      selected: _villaStyle == style,
+                      onSelected: (_) => setState(() => _villaStyle = style),
+                    ),
                 ],
               ),
             ],
@@ -245,9 +290,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               key: const Key('create-price'),
               controller: _priceController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Prix (FCFA)',
-                prefixIcon: Icon(Icons.payments_outlined),
+              decoration: InputDecoration(
+                labelText: switch (_type) {
+                  ListingType.location => 'Loyer mensuel (FCFA)',
+                  ListingType.vente => 'Prix de vente (FCFA)',
+                  ListingType.terrain => 'Prix du terrain (FCFA)',
+                },
+                prefixIcon: const Icon(Icons.payments_outlined),
               ),
               validator: (value) {
                 final amount = int.tryParse(
@@ -259,7 +308,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 return null;
               },
             ),
-            if (_type != ListingType.terrain) ...[
+            if (_type != ListingType.terrain &&
+                _kind != PropertyKind.appartement &&
+                _kind != PropertyKind.studio) ...[
               const SizedBox(height: 12),
               TextFormField(
                 controller: _roomsController,

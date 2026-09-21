@@ -83,7 +83,14 @@ class ListingCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    if (listing.rooms != null)
+                    if (listing.layoutLabel != null)
+                      _Meta(
+                        icon: listing.kind == PropertyKind.villa
+                            ? Icons.villa_outlined
+                            : Icons.bed_outlined,
+                        label: listing.layoutLabel!,
+                      )
+                    else if (listing.rooms != null)
                       _Meta(
                         icon: Icons.bed_outlined,
                         label: '${listing.rooms} pièces',

@@ -57,7 +57,7 @@ CTA **Publier une annonce** (accueil et profil) : mène à l’inscription si vo
 ## Fonctionnalités du MVP
 
 - **Accueil** : catégories Location / Vente / Terrain, biens en vedette, villes populaires, publication
-- **Recherche** : filtre par ville, type de bien et fourchette de prix (FCFA)
+- **Recherche** : Location / Vente avec type de bien (appartement, villa, studio…), typologie **F2–F6** ou style de villa, loyer mensuel ou prix de vente en FCFA, ville (Dakar, Pikine, Rufisque…) et annonces récentes
 - **Fiche bien** : détails, courtier associé, bouton **Faire une demande**
 - **Courtiers** : annuaire, fiche, appel, WhatsApp (lien mock) et e-mail
 - **Demandes** : formulaire (nom, téléphone sénégalais, message) enregistré **localement**

@@ -45,21 +45,117 @@ enum PropertyKind {
     PropertyKind.bureau => 'Bureau',
     PropertyKind.terrain => 'Terrain',
   };
+
+  /// Types proposés en Location / Vente (hors terrain).
+  static List<PropertyKind> get housing => const [
+    PropertyKind.appartement,
+    PropertyKind.villa,
+    PropertyKind.studio,
+    PropertyKind.maison,
+    PropertyKind.duplex,
+  ];
 }
 
-enum PriceRange {
-  all(null, null, 'Tous les prix'),
-  under300k(0, 300000, 'Moins de 300 000'),
-  from300kTo2m(300000, 2000000, '300 000 – 2 M'),
-  from2mTo30m(2000000, 30000000, '2 M – 30 M'),
-  from30mTo100m(30000000, 100000000, '30 M – 100 M'),
-  over100m(100000000, null, 'Plus de 100 M');
+/// Typologie F (Sénégal / France) : F2 = 2 pièces, etc.
+enum ApartmentLayout {
+  studio(1, 'Studio'),
+  f2(2, 'F2'),
+  f3(3, 'F3'),
+  f4(4, 'F4'),
+  f5(5, 'F5'),
+  f6(6, 'F6');
 
-  const PriceRange(this.minFcfa, this.maxFcfa, this.label);
+  const ApartmentLayout(this.rooms, this.label);
 
+  final int rooms;
+  final String label;
+
+  static ApartmentLayout? fromRooms(int? rooms) {
+    return switch (rooms) {
+      1 => ApartmentLayout.studio,
+      2 => ApartmentLayout.f2,
+      3 => ApartmentLayout.f3,
+      4 => ApartmentLayout.f4,
+      5 => ApartmentLayout.f5,
+      >= 6 => ApartmentLayout.f6,
+      _ => null,
+    };
+  }
+}
+
+enum VillaStyle {
+  basique('Villa basique'),
+  standing('Villa standing'),
+  duplex('Villa duplex'),
+  piscine('Villa avec piscine');
+
+  const VillaStyle(this.label);
+
+  final String label;
+}
+
+class PricePreset {
+  const PricePreset(this.label, this.minFcfa, this.maxFcfa, {this.id});
+
+  final String label;
   final int? minFcfa;
   final int? maxFcfa;
-  final String label;
+  final String? id;
+
+  static const locationMin = 50000;
+  static const locationMax = 2000000;
+  static const venteMin = 8000000;
+  static const venteMax = 400000000;
+  static const terrainMin = 3000000;
+  static const terrainMax = 80000000;
+
+  static int spanMin(ListingType? type) => switch (type) {
+    ListingType.location => locationMin,
+    ListingType.vente => venteMin,
+    ListingType.terrain => terrainMin,
+    null => locationMin,
+  };
+
+  static int spanMax(ListingType? type) => switch (type) {
+    ListingType.location => locationMax,
+    ListingType.vente => venteMax,
+    ListingType.terrain => terrainMax,
+    null => venteMax,
+  };
+
+  static List<PricePreset> forType(ListingType? type) {
+    if (type == ListingType.location) {
+      return const [
+        PricePreset(
+          'Moins de 200 000 / mois',
+          null,
+          200000,
+          id: 'loc-under-200k',
+        ),
+        PricePreset('200 – 400 000 / mois', 200000, 400000, id: 'loc-200-400k'),
+        PricePreset('400 – 800 000 / mois', 400000, 800000, id: 'loc-400-800k'),
+        PricePreset(
+          'Plus de 800 000 / mois',
+          800000,
+          null,
+          id: 'loc-over-800k',
+        ),
+      ];
+    }
+    if (type == ListingType.vente) {
+      return const [
+        PricePreset('Moins de 40 M', null, 40000000, id: 'sale-under-40m'),
+        PricePreset('40 – 100 M', 40000000, 100000000, id: 'sale-40-100m'),
+        PricePreset('100 – 200 M', 100000000, 200000000, id: 'sale-100-200m'),
+        PricePreset('Plus de 200 M', 200000000, null, id: 'sale-over-200m'),
+      ];
+    }
+    return const [
+      PricePreset('Moins de 15 M', null, 15000000),
+      PricePreset('15 – 40 M', 15000000, 40000000),
+      PricePreset('Plus de 40 M', 40000000, null),
+    ];
+  }
 }
 
 @immutable
@@ -81,6 +177,8 @@ class Listing {
     this.featured = false,
     this.isActive = true,
     this.wasPaid = false,
+    this.villaStyle,
+    this.listedAt = const DateTime(2026, 1, 1),
   });
 
   final String id;
@@ -99,8 +197,22 @@ class Listing {
   final bool featured;
   final bool isActive;
   final bool wasPaid;
+  final VillaStyle? villaStyle;
+  final DateTime listedAt;
 
   String get locationLabel => '$neighborhood, $city';
+
+  ApartmentLayout? get apartmentLayout {
+    if (kind != PropertyKind.appartement && kind != PropertyKind.studio) {
+      return null;
+    }
+    return ApartmentLayout.fromRooms(rooms);
+  }
+
+  String? get layoutLabel {
+    if (kind == PropertyKind.villa) return villaStyle?.label;
+    return apartmentLayout?.label;
+  }
 
   String get priceLabel {
     final amount = formatFcfa(priceFcfa);
@@ -136,6 +248,8 @@ class Listing {
       featured: featured,
       isActive: isActive ?? this.isActive,
       wasPaid: wasPaid,
+      villaStyle: villaStyle,
+      listedAt: listedAt,
     );
   }
 
@@ -156,6 +270,8 @@ class Listing {
     'featured': featured,
     'isActive': isActive,
     'wasPaid': wasPaid,
+    'villaStyle': villaStyle?.name,
+    'listedAt': listedAt.toIso8601String(),
   };
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -176,6 +292,12 @@ class Listing {
       featured: json['featured'] as bool? ?? false,
       isActive: json['isActive'] as bool? ?? true,
       wasPaid: json['wasPaid'] as bool? ?? false,
+      villaStyle: json['villaStyle'] is String
+          ? VillaStyle.values.byName(json['villaStyle'] as String)
+          : null,
+      listedAt: json['listedAt'] is String
+          ? DateTime.parse(json['listedAt'] as String)
+          : const DateTime(2026, 1, 1),
     );
   }
 }

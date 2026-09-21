@@ -59,7 +59,12 @@ class _SearchScreenState extends State<SearchScreen> {
       query: filters.query,
       city: filters.city,
       type: filters.type,
-      priceRange: filters.priceRange,
+      kind: filters.kind,
+      apartmentLayout: filters.apartmentLayout,
+      villaStyle: filters.villaStyle,
+      minFcfa: filters.minFcfa,
+      maxFcfa: filters.maxFcfa,
+      recentOnly: filters.recentOnly,
     );
 
     return Scaffold(
@@ -95,7 +100,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            '${results.length} bien${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}',
+                            key: const Key('search-result-count'),
+                            _resultCountLabel(results.length, filters.type),
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(
                                   color: AppColors.muted,
@@ -105,6 +111,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         if (filters.hasActiveFilters)
                           TextButton(
+                            key: const Key('filter-reset'),
                             onPressed: filters.clear,
                             child: const Text('Effacer les filtres'),
                           ),
@@ -129,8 +136,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 ? IllustratedEmpty(
                     illustration: EmptyIllustration.search,
                     title: 'Aucun bien ne correspond',
-                    message:
-                        'Essayez une autre ville, un autre type (location, vente, terrain) ou élargissez le budget en FCFA.',
+                    message: filters.type == ListingType.location
+                        ? 'Aucune location ne correspond. Changez le type de bien, le F (F2–F6) ou le loyer mensuel.'
+                        : filters.type == ListingType.vente
+                        ? 'Aucune vente ne correspond. Élargissez le prix de vente, le type (appartement, villa) ou la ville.'
+                        : 'Essayez une autre ville, un autre type (location, vente, terrain) ou élargissez le budget en FCFA.',
                     actionLabel: filters.hasActiveFilters
                         ? 'Réinitialiser'
                         : null,
@@ -151,6 +161,22 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+String _resultCountLabel(int count, ListingType? type) {
+  final plural = count > 1;
+  final noun = switch (type) {
+    ListingType.location => plural ? 'locations' : 'location',
+    ListingType.vente => plural ? 'ventes' : 'vente',
+    ListingType.terrain => plural ? 'terrains' : 'terrain',
+    null => plural ? 'biens' : 'bien',
+  };
+  final found = switch (type) {
+    ListingType.location ||
+    ListingType.vente => plural ? 'trouvées' : 'trouvée',
+    _ => plural ? 'trouvés' : 'trouvé',
+  };
+  return '$count $noun $found';
+}
+
 class _FilterBar extends StatelessWidget {
   const _FilterBar({required this.filters});
 
@@ -158,7 +184,9 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -185,6 +213,97 @@ class _FilterBar extends StatelessWidget {
             ],
           ),
         ),
+        if (filters.isHousing) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Text(
+              'Type de bien',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: AppColors.muted,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final kind in PropertyKind.housing)
+                  FilterChip(
+                    key: Key('filter-kind-${kind.name}'),
+                    label: Text(kind.label),
+                    selected: filters.kind == kind,
+                    showCheckmark: false,
+                    onSelected: (selected) =>
+                        filters.setKind(selected ? kind : null),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        if (filters.showApartmentLayouts) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Text(
+              'Typologie',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: AppColors.muted,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final layout in ApartmentLayout.values)
+                  if (layout != ApartmentLayout.studio)
+                    FilterChip(
+                      key: Key('filter-layout-${layout.name}'),
+                      label: Text(layout.label),
+                      selected: filters.apartmentLayout == layout,
+                      showCheckmark: false,
+                      onSelected: (selected) =>
+                          filters.setApartmentLayout(selected ? layout : null),
+                    ),
+              ],
+            ),
+          ),
+        ],
+        if (filters.showVillaStyles) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Text(
+              'Style de villa',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: AppColors.muted,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final style in VillaStyle.values)
+                  FilterChip(
+                    key: Key('filter-villa-${style.name}'),
+                    label: Text(style.label),
+                    selected: filters.villaStyle == style,
+                    showCheckmark: false,
+                    onSelected: (selected) =>
+                        filters.setVillaStyle(selected ? style : null),
+                  ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 10),
         SizedBox(
           height: 40,
@@ -192,12 +311,6 @@ class _FilterBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
             children: [
-              ActionChip(
-                avatar: const Icon(Icons.tune_rounded, size: 16),
-                label: const Text('Filtres'),
-                onPressed: () => _openAllFilters(context, filters),
-              ),
-              const SizedBox(width: 8),
               FilterChip(
                 avatar: const Icon(Icons.place_outlined, size: 16),
                 label: Text(filters.city ?? 'Toutes les villes'),
@@ -209,97 +322,24 @@ class _FilterBar extends StatelessWidget {
               FilterChip(
                 key: const Key('filter-price'),
                 avatar: const Icon(Icons.payments_outlined, size: 16),
-                label: Text(filters.priceRange.label),
-                selected: filters.priceRange != PriceRange.all,
+                label: Text(filters.priceChipLabel),
+                selected: filters.minFcfa != null || filters.maxFcfa != null,
                 showCheckmark: false,
                 onSelected: (_) => _pickPrice(context, filters),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                key: const Key('filter-recent'),
+                avatar: const Icon(Icons.schedule_rounded, size: 16),
+                label: const Text('Récentes'),
+                selected: filters.recentOnly,
+                showCheckmark: false,
+                onSelected: (selected) => filters.setRecentOnly(selected),
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  Future<void> _openAllFilters(
-    BuildContext context,
-    ListingFilterController filters,
-  ) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Filtrer les biens',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              const Text('Type', style: TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  FilterChip(
-                    label: const Text('Tous'),
-                    selected: filters.type == null,
-                    showCheckmark: false,
-                    onSelected: (_) {
-                      filters.setType(null);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  for (final type in ListingType.values)
-                    FilterChip(
-                      label: Text(type.label),
-                      selected: filters.type == type,
-                      showCheckmark: false,
-                      onSelected: (_) {
-                        filters.setType(type);
-                        Navigator.pop(context);
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.place_outlined),
-                title: Text(filters.city ?? 'Toutes les villes'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickCity(context, filters);
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.payments_outlined),
-                title: Text(filters.priceRange.label),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickPrice(context, filters);
-                },
-              ),
-              if (filters.hasActiveFilters)
-                TextButton(
-                  onPressed: () {
-                    filters.clear();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Effacer les filtres'),
-                ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -318,7 +358,7 @@ class _FilterBar extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                 child: Text(
-                  'Choisir une ville',
+                  'Ville / agglomération',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
@@ -348,33 +388,126 @@ class _FilterBar extends StatelessWidget {
     BuildContext context,
     ListingFilterController filters,
   ) async {
-    final selected = await showModalBottomSheet<PriceRange>(
+    await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) {
-        return SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Text(
-                  'Budget (FCFA)',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              for (final range in PriceRange.values)
-                ListTile(
-                  leading: const Icon(Icons.payments_outlined),
-                  title: Text(range.label),
-                  selected: filters.priceRange == range,
-                  onTap: () => Navigator.pop(context, range),
-                ),
-            ],
-          ),
-        );
+        return _PriceSheet(filters: filters);
       },
     );
-    if (selected != null) filters.setPriceRange(selected);
+  }
+}
+
+class _PriceSheet extends StatefulWidget {
+  const _PriceSheet({required this.filters});
+
+  final ListingFilterController filters;
+
+  @override
+  State<_PriceSheet> createState() => _PriceSheetState();
+}
+
+class _PriceSheetState extends State<_PriceSheet> {
+  late RangeValues _values;
+
+  ListingType? get _type => widget.filters.type;
+  int get _spanMin => PricePreset.spanMin(_type);
+  int get _spanMax => PricePreset.spanMax(_type);
+
+  @override
+  void initState() {
+    super.initState();
+    final min = widget.filters.minFcfa ?? _spanMin;
+    final max = widget.filters.maxFcfa ?? _spanMax;
+    _values = RangeValues(
+      min.clamp(_spanMin, _spanMax).toDouble(),
+      max.clamp(_spanMin, _spanMax).toDouble(),
+    );
+  }
+
+  String get _title => switch (_type) {
+    ListingType.location => 'Loyer mensuel (FCFA)',
+    ListingType.vente => 'Prix de vente (FCFA)',
+    ListingType.terrain => 'Prix du terrain (FCFA)',
+    null => 'Budget (FCFA)',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final filters = widget.filters;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              '${ListingFilterController.formatBound(_values.start.round())} – ${ListingFilterController.formatBound(_values.end.round())}${_type == ListingType.location ? ' / mois' : ''}',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryDark,
+              ),
+            ),
+            RangeSlider(
+              values: _values,
+              min: _spanMin.toDouble(),
+              max: _spanMax.toDouble(),
+              divisions: 20,
+              labels: RangeLabels(
+                ListingFilterController.formatBound(_values.start.round()),
+                ListingFilterController.formatBound(_values.end.round()),
+              ),
+              onChanged: (value) => setState(() => _values = value),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final preset in PricePreset.forType(_type))
+                  ActionChip(
+                    key: Key(
+                      'filter-price-preset-${preset.id ?? preset.label}',
+                    ),
+                    label: Text(preset.label),
+                    onPressed: () {
+                      filters.setPriceBounds(
+                        minFcfa: preset.minFcfa,
+                        maxFcfa: preset.maxFcfa,
+                      );
+                      Navigator.pop(context);
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              key: const Key('filter-price-apply'),
+              onPressed: () {
+                final min = _values.start.round();
+                final max = _values.end.round();
+                filters.setPriceBounds(
+                  minFcfa: min <= _spanMin ? null : min,
+                  maxFcfa: max >= _spanMax ? null : max,
+                );
+                Navigator.pop(context);
+              },
+              child: const Text('Appliquer'),
+            ),
+            TextButton(
+              onPressed: () {
+                filters.setPriceBounds();
+                Navigator.pop(context);
+              },
+              child: const Text('Tous les prix'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

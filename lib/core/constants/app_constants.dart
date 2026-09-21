@@ -21,6 +21,8 @@ abstract final class AppConstants {
     'Mbour',
     'Saly',
     'Rufisque',
+    'Pikine',
+    'Guédiawaye',
     'Touba',
     'Kaolack',
     'Ziguinchor',
