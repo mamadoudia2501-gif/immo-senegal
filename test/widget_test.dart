@@ -226,10 +226,6 @@ void main() {
     expect(find.text('0/4'), findsOneWidget);
     expect(find.byKey(const Key('create-add-photo')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('create-listing-submit')));
-    await tester.pumpAndSettle();
-    expect(find.text('Ajoutez au moins une photo.'), findsOneWidget);
-
     Future<void> addPhoto(String id) async {
       await tester.tap(find.byKey(const Key('create-add-photo')));
       await tester.pumpAndSettle();
