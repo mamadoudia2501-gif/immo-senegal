@@ -39,6 +39,7 @@ class AdvertiserProfileScreen extends StatelessWidget {
 
     final listings = context.watch<ListingRepository>().byPublisher(
       profile.phone,
+      publicOnly: true,
     );
     final liveStories = context.watch<StoryRepository>().byAuthor(
       profile.phone,

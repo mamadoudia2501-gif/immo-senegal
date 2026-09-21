@@ -194,6 +194,38 @@ class ListingPhoto {
   }
 }
 
+enum ListingLifecycle {
+  actif,
+  loue,
+  vendu,
+  supprimee;
+
+  String get label => switch (this) {
+    ListingLifecycle.actif => 'En ligne',
+    ListingLifecycle.loue => 'Loué',
+    ListingLifecycle.vendu => 'Vendu',
+    ListingLifecycle.supprimee => 'Supprimée',
+  };
+
+  bool get isClosed =>
+      this == ListingLifecycle.loue || this == ListingLifecycle.vendu;
+
+  static ListingLifecycle closeFor(ListingType type) {
+    return type == ListingType.location
+        ? ListingLifecycle.loue
+        : ListingLifecycle.vendu;
+  }
+
+  bool allowedFor(ListingType type) {
+    return switch (this) {
+      ListingLifecycle.actif || ListingLifecycle.supprimee => true,
+      ListingLifecycle.loue => type == ListingType.location,
+      ListingLifecycle.vendu =>
+        type == ListingType.vente || type == ListingType.terrain,
+    };
+  }
+}
+
 @immutable
 class Listing {
   const Listing({
@@ -216,6 +248,7 @@ class Listing {
     this.villaStyle,
     this.listedAt,
     this.photos = const [],
+    this.lifecycle = ListingLifecycle.actif,
   });
 
   final String id;
@@ -237,8 +270,23 @@ class Listing {
   final VillaStyle? villaStyle;
   final DateTime? listedAt;
   final List<ListingPhoto> photos;
+  final ListingLifecycle lifecycle;
 
   DateTime get publishedAt => listedAt ?? DateTime.utc(2026, 1, 1);
+
+  bool get isDeleted => lifecycle == ListingLifecycle.supprimee;
+
+  bool get isClosed => lifecycle.isClosed;
+
+  /// Visible dans recherche, accueil, profils publics.
+  bool get isPublic => isActive && lifecycle == ListingLifecycle.actif;
+
+  String get ownerStatusLabel {
+    if (isDeleted) return ListingLifecycle.supprimee.label;
+    if (isClosed) return lifecycle.label;
+    if (!isActive) return 'Masquée';
+    return ListingLifecycle.actif.label;
+  }
 
   double get coverHue => photos.isNotEmpty ? photos.first.hue : placeholderHue;
 
@@ -277,7 +325,7 @@ class Listing {
   static Color colorForHue(double hue) =>
       HSVColor.fromAHSV(1, hue, 0.42, 0.62).toColor();
 
-  Listing copyWith({bool? isActive}) {
+  Listing copyWith({bool? isActive, ListingLifecycle? lifecycle}) {
     return Listing(
       id: id,
       title: title,
@@ -298,6 +346,7 @@ class Listing {
       villaStyle: villaStyle,
       listedAt: listedAt,
       photos: photos,
+      lifecycle: lifecycle ?? this.lifecycle,
     );
   }
 
@@ -318,6 +367,7 @@ class Listing {
     'featured': featured,
     'isActive': isActive,
     'wasPaid': wasPaid,
+    'lifecycle': lifecycle.name,
     'villaStyle': villaStyle?.name,
     'listedAt': publishedAt.toIso8601String(),
     'photos': photos.map((photo) => photo.toJson()).toList(),
@@ -341,6 +391,9 @@ class Listing {
       featured: json['featured'] as bool? ?? false,
       isActive: json['isActive'] as bool? ?? true,
       wasPaid: json['wasPaid'] as bool? ?? false,
+      lifecycle: json['lifecycle'] is String
+          ? ListingLifecycle.values.byName(json['lifecycle'] as String)
+          : ListingLifecycle.actif,
       villaStyle: json['villaStyle'] is String
           ? VillaStyle.values.byName(json['villaStyle'] as String)
           : null,

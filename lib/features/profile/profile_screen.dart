@@ -10,6 +10,8 @@ import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/auth_widgets.dart';
+import '../../shared/widgets/listing_photo_placeholder.dart';
+import '../listings/listing_lifecycle_actions.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -195,16 +197,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () => auth.logout(),
               child: const Text('Se déconnecter'),
             ),
-            if (mine.isNotEmpty) ...[
-              const SizedBox(height: 22),
-              Text('Mes annonces', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
+            const SizedBox(height: 22),
+            Text('Mes annonces', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 8),
+            if (mine.isEmpty)
+              Container(
+                key: const Key('my-listings-empty'),
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                  boxShadow: appCardShadow,
+                ),
+                child: const Text(
+                  'Pas encore d’annonce. Publiez un bien pour le gérer ici (loué, vendu ou suppression).',
+                ),
+              )
+            else ...[
               Text(
-                '${mine.length} publication${mine.length > 1 ? 's' : ''}',
+                mine.every((listing) => listing.isClosed)
+                    ? 'Toutes vos annonces sont louées ou vendues. Elles n’apparaissent plus dans les recherches.'
+                    : '${mine.length} publication${mine.length > 1 ? 's' : ''} · ${mine.where((listing) => listing.isPublic).length} en ligne',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.muted,
                 ),
               ),
+              const SizedBox(height: 12),
+              for (final listing in mine) ...[
+                _MineListingTile(listing: listing),
+                const SizedBox(height: 12),
+              ],
             ],
           ],
           const SizedBox(height: 22),
@@ -375,6 +398,71 @@ class _Pill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MineListingTile extends StatelessWidget {
+  const _MineListingTile({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        boxShadow: appCardShadow,
+      ),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: ListTile(
+                  key: Key('my-listing-${listing.id}'),
+                  contentPadding: const EdgeInsets.only(left: 8),
+                  onTap: () => context.push('/bien/${listing.id}'),
+                  leading: SizedBox(
+                    width: 64,
+                    child: ListingPhotoPlaceholder(
+                      listing: listing,
+                      height: 52,
+                      borderRadius: BorderRadius.circular(8),
+                      showCaption: false,
+                    ),
+                  ),
+                  title: Text(
+                    listing.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        ListingStatusBadge(listing: listing),
+                        Text(
+                          listing.priceLabel,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              ListingLifecycleActions(listing: listing, compact: true),
+            ],
+          ),
+        ),
       ),
     );
   }

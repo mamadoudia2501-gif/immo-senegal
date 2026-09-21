@@ -29,11 +29,15 @@ class HomeScreen extends StatelessWidget {
 
     final listings = context.watch<ListingRepository>();
     final featured = listings.featured();
-    final spotlight = featured.first;
-    final moreFeatured = featured.skip(1).toList();
-    final recent = listings
-        .all()
-        .where((item) => item.id != spotlight.id)
+    final catalog = listings.all();
+    final spotlight = featured.isNotEmpty
+        ? featured.first
+        : (catalog.isNotEmpty ? catalog.first : null);
+    final moreFeatured = featured
+        .where((item) => item.id != spotlight?.id)
+        .toList();
+    final recent = catalog
+        .where((item) => item.id != spotlight?.id)
         .take(5)
         .toList();
 
@@ -63,51 +67,66 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SliverToBoxAdapter(child: _CategoryRow()),
-            const SliverToBoxAdapter(
-              child: SectionHeader(
-                title: 'À la une',
-                subtitle: 'Sélection du jour à Dakar et sur la Petite-Côte',
+            if (catalog.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 12, 20, 28),
+                  child: EmptyState(
+                    icon: Icons.home_work_outlined,
+                    title: 'Aucune annonce en ligne',
+                    message:
+                        'Les biens loués, vendus ou retirés n’apparaissent plus ici.',
+                  ),
+                ),
+              )
+            else ...[
+              const SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: 'À la une',
+                  subtitle: 'Sélection du jour à Dakar et sur la Petite-Côte',
+                ),
               ),
-            ),
-            SliverToBoxAdapter(child: _Spotlight(listing: spotlight)),
-            if (moreFeatured.isNotEmpty)
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 262,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: moreFeatured.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 14),
-                    itemBuilder: (context, index) => ListingCard(
-                      listing: moreFeatured[index],
-                      compact: true,
+              if (spotlight != null)
+                SliverToBoxAdapter(child: _Spotlight(listing: spotlight)),
+              if (moreFeatured.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 262,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: moreFeatured.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 14),
+                      itemBuilder: (context, index) => ListingCard(
+                        listing: moreFeatured[index],
+                        compact: true,
+                      ),
                     ),
                   ),
                 ),
+              const SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: 'Villes populaires',
+                  subtitle: 'Filtrez en un geste',
+                ),
               ),
-            const SliverToBoxAdapter(
-              child: SectionHeader(
-                title: 'Villes populaires',
-                subtitle: 'Filtrez en un geste',
+              const SliverToBoxAdapter(child: _CityChips()),
+              const SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: 'Récemment ajoutés',
+                  subtitle: 'Nouvelles annonces en FCFA',
+                ),
               ),
-            ),
-            const SliverToBoxAdapter(child: _CityChips()),
-            const SliverToBoxAdapter(
-              child: SectionHeader(
-                title: 'Récemment ajoutés',
-                subtitle: 'Nouvelles annonces en FCFA',
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                sliver: SliverList.separated(
+                  itemCount: recent.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) =>
+                      ListingCard(listing: recent[index]),
+                ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-              sliver: SliverList.separated(
-                itemCount: recent.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 16),
-                itemBuilder: (context, index) =>
-                    ListingCard(listing: recent[index]),
-              ),
-            ),
+            ],
           ],
         ),
       ),

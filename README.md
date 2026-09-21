@@ -63,6 +63,7 @@ CTA **Publier une annonce** (accueil et profil) : mène à l’inscription si vo
 - **Discussions** : après une demande, un **chat in-app** (messages texte, horodatage, statut Envoyé) est créé et persisté localement. Demandeur et annonceur écrivent dans l’app ; WhatsApp reste un raccourci secondaire. L’onglet **Mes discussions** liste les fils.
 - **Profil** : visiteur, annonceur (quota, abo stories) ou admin, langue FR, devise FCFA
 - **Publication** : formulaire terrain / location / vente, **1 à 4 photos** mock, quota puis paiement mock
+- **Cycle de vie** : l’annonceur (et l’admin) peut **Marquer Loué** (location), **Marquer Vendu** (vente / terrain) ou **Supprimer** (confirmation). Loué / vendu : badge dans **Mes annonces**, retiré des recherches et du fil public. Supprimée : disparue partout.
 - **Admin** : modération des annonces, liste des annonceurs, file des demandes de story
 
 Les photos des annonces du catalogue d’exemple sont des **placeholders** colorés. Les annonces publiées stockent jusqu’à 4 photos mock (vues prédéfinies). Session, quota, annonces, stories et **discussions** sont persistés avec `shared_preferences`.

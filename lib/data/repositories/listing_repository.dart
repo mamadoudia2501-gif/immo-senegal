@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/utils/phone.dart';
 import '../mock/sample_data.dart';
+import '../models/app_user.dart';
 import '../models/listing.dart';
 
 class ListingRepository extends ChangeNotifier {
@@ -16,21 +18,29 @@ class ListingRepository extends ChangeNotifier {
   final List<Listing> _userListings = [];
   bool loaded = false;
 
-  List<Listing> get userListings => List.unmodifiable(_userListings);
+  /// Annonces utilisateur non supprimées (y compris louées / vendues / masquées).
+  List<Listing> get userListings => [
+    for (final listing in _userListings)
+      if (!listing.isDeleted) listing,
+  ];
 
+  /// Catalogue public : actives seulement (recherche, accueil, Location/Vente/Terrains).
   List<Listing> all({bool includeInactive = false}) {
     final extras = includeInactive
-        ? _userListings
-        : _userListings.where((listing) => listing.isActive);
+        ? userListings
+        : _userListings.where((listing) => listing.isPublic);
     return [...extras, ...sampleListings];
   }
 
   List<Listing> featured() => all()
-      .where((listing) => listing.featured && listing.isActive)
+      .where((listing) => listing.featured && listing.isPublic)
       .toList(growable: false);
 
   Listing? byId(String id) {
-    for (final listing in all(includeInactive: true)) {
+    for (final listing in _userListings) {
+      if (listing.id == id && !listing.isDeleted) return listing;
+    }
+    for (final listing in sampleListings) {
       if (listing.id == id) return listing;
     }
     return null;
@@ -40,9 +50,25 @@ class ListingRepository extends ChangeNotifier {
       .where((listing) => listing.brokerId == brokerId)
       .toList(growable: false);
 
-  List<Listing> byPublisher(String phone) => _userListings
-      .where((listing) => listing.publisherPhone == phone)
-      .toList(growable: false);
+  List<Listing> byPublisher(String phone, {bool publicOnly = false}) {
+    final local = senegalLocalDigits(phone);
+    return [
+      for (final listing in _userListings)
+        if (!listing.isDeleted &&
+            listing.publisherPhone != null &&
+            senegalLocalDigits(listing.publisherPhone!) == local &&
+            (!publicOnly || listing.isPublic))
+          listing,
+    ];
+  }
+
+  bool canManage({required Listing listing, required AppUser? user}) {
+    if (user == null || listing.isDeleted) return false;
+    final publisher = listing.publisherPhone;
+    if (publisher == null) return false;
+    if (user.isAdmin) return true;
+    return senegalLocalDigits(publisher) == senegalLocalDigits(user.phone);
+  }
 
   List<Listing> search({
     String query = '',
@@ -112,6 +138,21 @@ class ListingRepository extends ChangeNotifier {
     _userListings[index] = _userListings[index].copyWith(isActive: isActive);
     await _persist();
     notifyListeners();
+  }
+
+  Future<bool> setLifecycle({
+    required String id,
+    required ListingLifecycle lifecycle,
+  }) async {
+    final index = _userListings.indexWhere((listing) => listing.id == id);
+    if (index < 0) return false;
+    final current = _userListings[index];
+    if (current.isDeleted) return false;
+    if (!lifecycle.allowedFor(current.type)) return false;
+    _userListings[index] = current.copyWith(lifecycle: lifecycle);
+    await _persist();
+    notifyListeners();
+    return true;
   }
 
   List<Listing> _decode(String? raw) {

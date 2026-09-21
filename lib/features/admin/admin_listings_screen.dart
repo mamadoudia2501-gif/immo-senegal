@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../data/models/listing.dart';
 import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/listing_photo_placeholder.dart';
 
@@ -52,25 +53,34 @@ class AdminListingsScreen extends StatelessWidget {
                           ),
                           title: Text(listing.title),
                           subtitle: Text(
-                            '${listing.locationLabel} · ${listing.priceLabel}',
+                            '${listing.locationLabel} · ${listing.priceLabel} · ${listing.ownerStatusLabel}',
                           ),
                           trailing: TypeBadge(
                             type: listing.type,
                             compact: true,
                           ),
                         ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          value: listing.isActive,
-                          activeThumbColor: AppColors.primary,
-                          title: Text(
-                            listing.isActive
-                                ? 'Annonce visible'
-                                : 'Annonce masquée',
+                        if (listing.lifecycle == ListingLifecycle.actif)
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: listing.isActive,
+                            activeThumbColor: AppColors.primary,
+                            title: Text(
+                              listing.isActive
+                                  ? 'Annonce visible'
+                                  : 'Annonce masquée',
+                            ),
+                            onChanged: (value) =>
+                                repo.setActive(id: listing.id, isActive: value),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Retirée du fil public (${listing.lifecycle.label}).',
+                              style: const TextStyle(color: AppColors.muted),
+                            ),
                           ),
-                          onChanged: (value) =>
-                              repo.setActive(id: listing.id, isActive: value),
-                        ),
                       ],
                     ),
                   ),

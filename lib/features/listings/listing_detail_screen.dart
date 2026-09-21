@@ -14,6 +14,7 @@ import '../../data/repositories/story_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/listing_gallery.dart';
 import '../../shared/widgets/listing_photo_placeholder.dart';
+import 'listing_lifecycle_actions.dart';
 
 class ListingDetailScreen extends StatelessWidget {
   const ListingDetailScreen({super.key, required this.listingId});
@@ -22,10 +23,22 @@ class ListingDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listing = context.watch<ListingRepository>().byId(listingId);
+    final listings = context.watch<ListingRepository>();
+    final listing = listings.byId(listingId);
     final auth = context.watch<AuthRepository>();
     final conversations = context.watch<ConversationRepository>();
     if (listing == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Bien introuvable')),
+        body: const Center(child: Text('Cette annonce n’est plus disponible.')),
+      );
+    }
+
+    final canManage = listings.canManage(
+      listing: listing,
+      user: auth.currentUser,
+    );
+    if (!listing.isPublic && !canManage) {
       return Scaffold(
         appBar: AppBar(title: const Text('Bien introuvable')),
         body: const Center(child: Text('Cette annonce n’est plus disponible.')),
@@ -63,7 +76,14 @@ class ListingDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TypeBadge(type: listing.type),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      TypeBadge(type: listing.type),
+                      if (canManage) ListingStatusBadge(listing: listing),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   Text(listing.title, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 8),
@@ -131,6 +151,10 @@ class ListingDetailScreen extends StatelessWidget {
                       color: AppColors.ink,
                     ),
                   ),
+                  if (canManage) ...[
+                    const SizedBox(height: 28),
+                    ListingLifecycleActions(listing: listing),
+                  ],
                   if (listing.publisherPhone != null &&
                       !isReservedAdminPhone(listing.publisherPhone!)) ...[
                     const SizedBox(height: 28),
@@ -283,7 +307,7 @@ class ListingDetailScreen extends StatelessWidget {
                       icon: const Icon(Icons.forum_rounded),
                       label: const Text('Continuer la discussion'),
                     )
-                  else
+                  else if (listing.isPublic)
                     FilledButton.icon(
                       key: const Key('listing-inquiry-cta'),
                       onPressed: () => context.push(
