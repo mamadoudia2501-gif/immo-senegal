@@ -6,7 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/inquiry.dart';
 
 class InquiryRepository extends ChangeNotifier {
-  InquiryRepository({this._preferences});
+  InquiryRepository({SharedPreferences? preferences})
+    : _preferences = preferences;
 
   static const _storageKey = 'immo_senegal_inquiries';
 

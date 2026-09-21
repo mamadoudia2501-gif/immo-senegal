@@ -34,7 +34,8 @@ class InquiriesScreen extends StatelessWidget {
           ? IllustratedEmpty(
               illustration: EmptyIllustration.inbox,
               title: 'Pas encore de demande',
-              message: 'Décrivez le bien que vous cherchez ou contactez un courtier depuis une annonce. Les demandes restent sur cet appareil.',
+              message:
+                  'Décrivez le bien que vous cherchez ou contactez un courtier depuis une annonce. Les demandes restent sur cet appareil.',
               actionLabel: 'Faire une demande',
               onAction: () => context.push('/demande/nouvelle'),
             )

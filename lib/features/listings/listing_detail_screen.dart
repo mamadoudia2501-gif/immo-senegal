@@ -25,7 +25,9 @@ class ListingDetailScreen extends StatelessWidget {
       );
     }
 
-    final broker = context.read<BrokerRepository>().byId(listing.brokerId);
+    final broker = listing.brokerId == null
+        ? null
+        : context.read<BrokerRepository>().byId(listing.brokerId!);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -105,6 +107,20 @@ class ListingDetailScreen extends StatelessWidget {
                       color: AppColors.ink,
                     ),
                   ),
+                  if (listing.publisherPhone != null) ...[
+                    const SizedBox(height: 28),
+                    Text('Annonceur', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    Text(
+                      listing.publisherPhone!,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    if (listing.wasPaid)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 6),
+                        child: Text('Annonce payante (100 FCFA, simulation)'),
+                      ),
+                  ],
                   if (broker != null) ...[
                     const SizedBox(height: 28),
                     Text('Courtier', style: theme.textTheme.titleLarge),

@@ -9,7 +9,8 @@ const sampleBrokers = <Broker>[
     city: 'Dakar',
     phone: '+221 77 123 45 67',
     email: 'aminata.diop@almadieshabitat.sn',
-    bio: 'Spécialiste des villas et appartements haut standing à Almadies, Ngor et Ouakam. Accompagnement des familles et de la diaspora.',
+    bio:
+        'Spécialiste des villas et appartements haut standing à Almadies, Ngor et Ouakam. Accompagnement des familles et de la diaspora.',
     yearsExperience: 9,
     specialty: 'Villas & standing Dakar',
   ),
@@ -20,7 +21,8 @@ const sampleBrokers = <Broker>[
     city: 'Thiès',
     phone: '+221 76 234 56 78',
     email: 'cheikh.ndiaye@thiesimmo.sn',
-    bio: 'Courtier indépendant sur Thiès et la Petite-Côte. Terrains viabilisés, maisons familiales et investissements locatifs.',
+    bio:
+        'Courtier indépendant sur Thiès et la Petite-Côte. Terrains viabilisés, maisons familiales et investissements locatifs.',
     yearsExperience: 6,
     specialty: 'Terrains & maisons Thiès',
   ),
@@ -31,7 +33,8 @@ const sampleBrokers = <Broker>[
     city: 'Saly',
     phone: '+221 78 345 67 89',
     email: 'fatou.sarr@salyprestige.sn',
-    bio: 'Locations saisonnières et résidences secondaires à Saly, Mbour et Somone. Réseau d’artisans et de gestionnaires sur place.',
+    bio:
+        'Locations saisonnières et résidences secondaires à Saly, Mbour et Somone. Réseau d’artisans et de gestionnaires sur place.',
     yearsExperience: 11,
     specialty: 'Résidentiel Petite-Côte',
   ),
@@ -42,7 +45,8 @@ const sampleBrokers = <Broker>[
     city: 'Saint-Louis',
     phone: '+221 77 456 78 90',
     email: 'ibrahima.ba@fleuveimmo.sn',
-    bio: 'Maisons coloniales, riads et terrains à Saint-Louis. Bonne connaissance du foncier de l’île et de Sor.',
+    bio:
+        'Maisons coloniales, riads et terrains à Saint-Louis. Bonne connaissance du foncier de l’île et de Sor.',
     yearsExperience: 8,
     specialty: 'Patrimoine Saint-Louis',
   ),
@@ -53,7 +57,8 @@ const sampleBrokers = <Broker>[
     city: 'Dakar',
     phone: '+221 70 567 89 01',
     email: 'marieme.fall@plateauconseil.sn',
-    bio: 'Bureaux, commerces et appartements au Plateau et à Médina. Conseil aux entreprises et aux particuliers pressés.',
+    bio:
+        'Bureaux, commerces et appartements au Plateau et à Médina. Conseil aux entreprises et aux particuliers pressés.',
     yearsExperience: 7,
     specialty: 'Bureaux & centre-ville',
   ),
@@ -64,7 +69,8 @@ const sampleBrokers = <Broker>[
     city: 'Ziguinchor',
     phone: '+221 76 678 90 12',
     email: 'ousmane.kante@casamancefoncier.sn',
-    bio: 'Terrains agricoles et résidentiels en Casamance. Transparence sur les titres et accompagnement notarial.',
+    bio:
+        'Terrains agricoles et résidentiels en Casamance. Transparence sur les titres et accompagnement notarial.',
     yearsExperience: 12,
     specialty: 'Foncier Casamance',
   ),
@@ -81,7 +87,8 @@ const sampleListings = <Listing>[
     priceFcfa: 450000,
     rooms: 3,
     surfaceM2: 95,
-    description: 'Bel appartement lumineux à deux pas de la Corniche Ouest. Salon, deux chambres, cuisine équipée, climatisation et gardiennage 24h. Idéal pour un couple ou une petite famille.',
+    description:
+        'Bel appartement lumineux à deux pas de la Corniche Ouest. Salon, deux chambres, cuisine équipée, climatisation et gardiennage 24h. Idéal pour un couple ou une petite famille.',
     brokerId: 'b1',
     placeholderHue: 168,
     featured: true,
@@ -96,7 +103,8 @@ const sampleListings = <Listing>[
     priceFcfa: 185000000,
     rooms: 5,
     surfaceM2: 320,
-    description: 'Villa contemporaine dans une impasse calme de Ngor. Grand salon, suite parentale, piscine, garage deux voitures et jardin tropical. Titre foncier en règle.',
+    description:
+        'Villa contemporaine dans une impasse calme de Ngor. Grand salon, suite parentale, piscine, garage deux voitures et jardin tropical. Titre foncier en règle.',
     brokerId: 'b1',
     placeholderHue: 18,
     featured: true,
@@ -110,7 +118,8 @@ const sampleListings = <Listing>[
     kind: PropertyKind.terrain,
     priceFcfa: 25000000,
     surfaceM2: 300,
-    description: 'Parcelle plate, bornée, raccordable eau et électricité. Accès bitumé, à 15 minutes de Rufisque. Idéal pour une villa R+1.',
+    description:
+        'Parcelle plate, bornée, raccordable eau et électricité. Accès bitumé, à 15 minutes de Rufisque. Idéal pour une villa R+1.',
     brokerId: 'b2',
     placeholderHue: 78,
     featured: true,
@@ -125,7 +134,8 @@ const sampleListings = <Listing>[
     priceFcfa: 180000,
     rooms: 1,
     surfaceM2: 32,
-    description: 'Studio rénové proche de la Place de l’Indépendance. Meublé, wifi, climatiseur. Convient à un jeune actif ou un stagiaire.',
+    description:
+        'Studio rénové proche de la Place de l’Indépendance. Meublé, wifi, climatiseur. Convient à un jeune actif ou un stagiaire.',
     brokerId: 'b5',
     placeholderHue: 210,
   ),
@@ -139,7 +149,8 @@ const sampleListings = <Listing>[
     priceFcfa: 95000000,
     rooms: 4,
     surfaceM2: 168,
-    description: 'Duplex récent dans une résidence sécurisée. Terrasse, deux salles d’eau, cuisine américaine. Proche des écoles et de l’aéroport.',
+    description:
+        'Duplex récent dans une résidence sécurisée. Terrasse, deux salles d’eau, cuisine américaine. Proche des écoles et de l’aéroport.',
     brokerId: 'b5',
     placeholderHue: 32,
     featured: true,
@@ -153,7 +164,8 @@ const sampleListings = <Listing>[
     kind: PropertyKind.terrain,
     priceFcfa: 18000000,
     surfaceM2: 500,
-    description: 'Terrain résidentiel dans un lotissement calme, à quelques minutes des plages. Bornage effectué, documents disponibles.',
+    description:
+        'Terrain résidentiel dans un lotissement calme, à quelques minutes des plages. Bornage effectué, documents disponibles.',
     brokerId: 'b3',
     placeholderHue: 92,
   ),
@@ -167,7 +179,8 @@ const sampleListings = <Listing>[
     priceFcfa: 42000000,
     rooms: 4,
     surfaceM2: 210,
-    description: 'Maison à balcons en bois, patio intérieur et toiture à rénover partiellement. Beau potentiel pour résidence ou maison d’hôtes.',
+    description:
+        'Maison à balcons en bois, patio intérieur et toiture à rénover partiellement. Beau potentiel pour résidence ou maison d’hôtes.',
     brokerId: 'b4',
     placeholderHue: 28,
   ),
@@ -181,7 +194,8 @@ const sampleListings = <Listing>[
     priceFcfa: 150000,
     rooms: 3,
     surfaceM2: 78,
-    description: 'F3 au 1er étage, eau courante, compteur SENELEC. Quartier familial, proches marchés et gare. Loyer hors charges.',
+    description:
+        'F3 au 1er étage, eau courante, compteur SENELEC. Quartier familial, proches marchés et gare. Loyer hors charges.',
     brokerId: 'b2',
     placeholderHue: 145,
   ),
@@ -195,7 +209,8 @@ const sampleListings = <Listing>[
     priceFcfa: 800000,
     rooms: 3,
     surfaceM2: 160,
-    description: 'Villa meublée avec jardin et terrasse, disponible à l’année. Idéale pour une famille ou un télétravail au calme. Charges de gardiennage incluses.',
+    description:
+        'Villa meublée avec jardin et terrasse, disponible à l’année. Idéale pour une famille ou un télétravail au calme. Charges de gardiennage incluses.',
     brokerId: 'b3',
     placeholderHue: 195,
     featured: true,
@@ -209,7 +224,8 @@ const sampleListings = <Listing>[
     kind: PropertyKind.terrain,
     priceFcfa: 8000000,
     surfaceM2: 10000,
-    description: 'Parcelle agricole en bordure de piste, sol fertile. Possibilité de bâtir un campement. Visite accompagnée par le courtier local.',
+    description:
+        'Parcelle agricole en bordure de piste, sol fertile. Possibilité de bâtir un campement. Visite accompagnée par le courtier local.',
     brokerId: 'b6',
     placeholderHue: 110,
   ),
@@ -222,7 +238,8 @@ const sampleListings = <Listing>[
     kind: PropertyKind.bureau,
     priceFcfa: 350000,
     surfaceM2: 80,
-    description: 'Plateau de bureaux climatisé, 2 open spaces et une salle de réunion. Ascenseur, fibre, parking visiteur à proximité.',
+    description:
+        'Plateau de bureaux climatisé, 2 open spaces et une salle de réunion. Ascenseur, fibre, parking visiteur à proximité.',
     brokerId: 'b5',
     placeholderHue: 230,
   ),
@@ -236,7 +253,8 @@ const sampleListings = <Listing>[
     priceFcfa: 38000000,
     rooms: 6,
     surfaceM2: 240,
-    description: 'Grande maison R+1 avec cour, puits et trois salles d’eau. Bien située pour une famille élargie. Titre en cours de mutation.',
+    description:
+        'Grande maison R+1 avec cour, puits et trois salles d’eau. Bien située pour une famille élargie. Titre en cours de mutation.',
     brokerId: 'b2',
     placeholderHue: 48,
   ),
@@ -250,7 +268,8 @@ const sampleListings = <Listing>[
     priceFcfa: 220000,
     rooms: 4,
     surfaceM2: 110,
-    description: 'F4 dans une cité calme de l’unité 15. Balcon, cuisine indépendante, eau régulière. Proche transports vers le centre-ville.',
+    description:
+        'F4 dans une cité calme de l’unité 15. Balcon, cuisine indépendante, eau régulière. Proche transports vers le centre-ville.',
     brokerId: 'b1',
     placeholderHue: 155,
   ),
@@ -263,7 +282,8 @@ const sampleListings = <Listing>[
     kind: PropertyKind.terrain,
     priceFcfa: 12000000,
     surfaceM2: 400,
-    description: 'Lotissement en cours de viabilisation, actes de vente disponibles. Accès facile à la nationale 1 et à la plage.',
+    description:
+        'Lotissement en cours de viabilisation, actes de vente disponibles. Accès facile à la nationale 1 et à la plage.',
     brokerId: 'b3',
     placeholderHue: 70,
   ),
@@ -277,7 +297,8 @@ const sampleListings = <Listing>[
     priceFcfa: 240000000,
     rooms: 4,
     surfaceM2: 280,
-    description: 'Villa d’architecte à Fann, grand séjour, bureau, jardin ombragé. Quartier prisé, proche université et Corniche.',
+    description:
+        'Villa d’architecte à Fann, grand séjour, bureau, jardin ombragé. Quartier prisé, proche université et Corniche.',
     brokerId: 'b1',
     placeholderHue: 8,
     featured: true,
@@ -292,7 +313,8 @@ const sampleListings = <Listing>[
     priceFcfa: 120000,
     rooms: 3,
     surfaceM2: 140,
-    description: 'Maison de plain-pied, cour clôturée, garage. Quartier résidentiel, loyer abordable pour une famille.',
+    description:
+        'Maison de plain-pied, cour clôturée, garage. Quartier résidentiel, loyer abordable pour une famille.',
     brokerId: 'b2',
     placeholderHue: 188,
   ),
@@ -306,7 +328,8 @@ const sampleListings = <Listing>[
     priceFcfa: 18500000,
     rooms: 3,
     surfaceM2: 86,
-    description: 'Appartement dans un immeuble récent, carrelage, menuiserie aluminium. Livraison immédiate.',
+    description:
+        'Appartement dans un immeuble récent, carrelage, menuiserie aluminium. Livraison immédiate.',
     brokerId: 'b4',
     placeholderHue: 250,
   ),
@@ -319,7 +342,8 @@ const sampleListings = <Listing>[
     kind: PropertyKind.terrain,
     priceFcfa: 55000000,
     surfaceM2: 250,
-    description: 'Petite parcelle constructible dans un secteur demandé, vue partielle sur les Mamelles. Négociation possible.',
+    description:
+        'Petite parcelle constructible dans un secteur demandé, vue partielle sur les Mamelles. Négociation possible.',
     brokerId: 'b1',
     placeholderHue: 55,
   ),

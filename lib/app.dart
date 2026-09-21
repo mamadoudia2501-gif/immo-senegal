@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'core/constants/app_constants.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'data/repositories/auth_repository.dart';
 import 'data/repositories/broker_repository.dart';
 import 'data/repositories/inquiry_repository.dart';
 import 'data/repositories/listing_repository.dart';
@@ -16,12 +17,14 @@ class ImmoApp extends StatefulWidget {
   const ImmoApp({
     super.key,
     required this.inquiryRepository,
-    this.listingRepository = const ListingRepository(),
+    required this.authRepository,
+    required this.listingRepository,
     this.brokerRepository = const BrokerRepository(),
     this.mockLoadDelay = const Duration(milliseconds: 320),
   });
 
   final InquiryRepository inquiryRepository;
+  final AuthRepository authRepository;
   final ListingRepository listingRepository;
   final BrokerRepository brokerRepository;
   final Duration mockLoadDelay;
@@ -31,15 +34,16 @@ class ImmoApp extends StatefulWidget {
 }
 
 class _ImmoAppState extends State<ImmoApp> {
-  late final GoRouter _router = createRouter();
+  late final GoRouter _router = createRouter(widget.authRepository);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider.value(value: widget.listingRepository),
+        ChangeNotifierProvider.value(value: widget.listingRepository),
         Provider.value(value: widget.brokerRepository),
         ChangeNotifierProvider.value(value: widget.inquiryRepository),
+        ChangeNotifierProvider.value(value: widget.authRepository),
         ChangeNotifierProvider(create: (_) => ListingFilterController()),
         ChangeNotifierProvider(
           create: (_) => CatalogReady(delay: widget.mockLoadDelay),

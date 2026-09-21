@@ -1,19 +1,40 @@
 import 'package:go_router/go_router.dart';
 
+import '../../data/repositories/auth_repository.dart';
+import '../../features/admin/admin_listings_screen.dart';
+import '../../features/auth/phone_auth_screen.dart';
+import '../../features/auth/whatsapp_code_screen.dart';
 import '../../features/brokers/broker_detail_screen.dart';
 import '../../features/brokers/brokers_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/inquiries/inquiries_screen.dart';
 import '../../features/inquiries/inquiry_form_screen.dart';
+import '../../features/listings/create_listing_screen.dart';
 import '../../features/listings/listing_detail_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/shell/main_shell.dart';
 import 'fade_slide_page.dart';
 
-GoRouter createRouter() {
+GoRouter createRouter(AuthRepository auth) {
   return GoRouter(
     initialLocation: '/accueil',
+    refreshListenable: auth,
+    redirect: (context, state) {
+      final path = state.uri.path;
+      if (path == '/annonce/nouvelle' && !auth.isLoggedIn) {
+        return '/connexion?next=/annonce/nouvelle';
+      }
+      if (path == '/admin/annonces' && !auth.isAdmin) {
+        return auth.isLoggedIn ? '/profil' : '/connexion?next=/admin/annonces';
+      }
+      if (path == '/connexion/code' &&
+          auth.pendingPhone == null &&
+          !auth.isLoggedIn) {
+        return '/connexion';
+      }
+      return null;
+    },
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -88,6 +109,36 @@ GoRouter createRouter() {
           child: InquiryFormScreen(
             listingId: state.uri.queryParameters['listingId'],
           ),
+        ),
+      ),
+      GoRoute(
+        path: '/connexion',
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: PhoneAuthScreen(nextPath: state.uri.queryParameters['next']),
+        ),
+      ),
+      GoRoute(
+        path: '/connexion/code',
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: WhatsAppCodeScreen(
+            nextPath: state.uri.queryParameters['next'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/annonce/nouvelle',
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const CreateListingScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/annonces',
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const AdminListingsScreen(),
         ),
       ),
     ],

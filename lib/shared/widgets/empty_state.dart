@@ -101,8 +101,9 @@ class SectionHeader extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.muted),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ],

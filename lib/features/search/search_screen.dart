@@ -55,7 +55,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final bootstrapped = context.watch<CatalogReady>().ready;
     final filters = context.watch<ListingFilterController>();
-    final results = context.read<ListingRepository>().search(
+    final results = context.watch<ListingRepository>().search(
       query: filters.query,
       city: filters.city,
       type: filters.type,
@@ -129,7 +129,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 ? IllustratedEmpty(
                     illustration: EmptyIllustration.search,
                     title: 'Aucun bien ne correspond',
-                    message: 'Essayez une autre ville, un autre type (location, vente, terrain) ou élargissez le budget en FCFA.',
+                    message:
+                        'Essayez une autre ville, un autre type (location, vente, terrain) ou élargissez le budget en FCFA.',
                     actionLabel: filters.hasActiveFilters
                         ? 'Réinitialiser'
                         : null,

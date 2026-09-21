@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/formatters/money_formatter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/listing.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../data/repositories/listing_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
+import '../../shared/widgets/auth_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +26,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final auth = context.watch<AuthRepository>();
+    final user = auth.currentUser;
+    final listings = context.watch<ListingRepository>();
+    final mine = user == null
+        ? const <Listing>[]
+        : listings.byPublisher(user.phone);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Profil')),
       body: ListView(
@@ -34,41 +48,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               boxShadow: appCardShadow,
             ),
-            child: const Padding(
-              padding: EdgeInsets.fromLTRB(20, 28, 20, 24),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
               child: Column(
                 children: [
-                  AppAvatar(initials: 'IS', seed: 'visitor', radius: 42),
-                  SizedBox(height: 14),
+                  AppAvatar(
+                    initials: user?.initials ?? 'IS',
+                    seed: user?.phone ?? 'visitor',
+                    radius: 42,
+                  ),
+                  const SizedBox(height: 14),
                   Text(
-                    'Visiteur',
-                    style: TextStyle(
+                    user?.displayName ?? 'Visiteur',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.4,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Compte local · aucune connexion requise',
+                    user == null
+                        ? 'Parcourez les annonces sans compte'
+                        : user.phone,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xE6FFFFFF)),
+                    style: const TextStyle(color: Color(0xE6FFFFFF)),
                   ),
-                  SizedBox(height: 14),
+                  const SizedBox(height: 14),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
                     children: [
-                      _Pill(label: 'Français', icon: Icons.language_rounded),
                       _Pill(
+                        label: user?.role.label ?? 'Visiteur',
+                        icon: Icons.badge_outlined,
+                      ),
+                      const _Pill(
+                        label: 'Français',
+                        icon: Icons.language_rounded,
+                      ),
+                      const _Pill(
                         label: AppConstants.currency,
                         icon: Icons.payments_outlined,
-                      ),
-                      _Pill(
-                        label: AppConstants.country,
-                        icon: Icons.flag_outlined,
                       ),
                     ],
                   ),
@@ -76,6 +99,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 20),
+          if (user == null) ...[
+            PublishCta(
+              onPressed: () => openPublishFlow(context, loggedIn: false),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton(
+              key: const Key('profile-login-cta'),
+              onPressed: () => context.push('/connexion'),
+              child: const Text('Se connecter / s’inscrire'),
+            ),
+            const SizedBox(height: 16),
+            const DemoAccountsCard(),
+          ] else ...[
+            if (user.isAdmin)
+              const _QuotaCard(
+                title: 'Publication illimitée',
+                body:
+                    'Compte administrateur : les annonces sont gratuites, sans quota.',
+              )
+            else
+              _QuotaCard(
+                key: const Key('quota-label'),
+                title: user.freeListingsRemaining > 0
+                    ? '${user.freeListingsRemaining} annonces gratuites restantes'
+                    : 'Quota gratuit épuisé',
+                body: user.freeListingsRemaining > 0
+                    ? '${AppConstants.freeListingQuota} offertes au départ, puis ${formatFcfa(AppConstants.extraListingPriceFcfa)} / annonce.'
+                    : 'Prochaine publication : ${formatFcfa(AppConstants.extraListingPriceFcfa)} (paiement mock).',
+              ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              key: const Key('profile-publish-cta'),
+              onPressed: () => context.push('/annonce/nouvelle'),
+              icon: const Icon(Icons.add_home_work_outlined),
+              label: const Text('Publier une annonce'),
+            ),
+            if (user.isAdmin) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const Key('admin-moderation-cta'),
+                onPressed: () => context.push('/admin/annonces'),
+                icon: const Icon(Icons.admin_panel_settings_outlined),
+                label: const Text('Modérer les annonces'),
+              ),
+            ],
+            const SizedBox(height: 10),
+            OutlinedButton(
+              key: const Key('logout-cta'),
+              onPressed: () => auth.logout(),
+              child: const Text('Se déconnecter'),
+            ),
+            if (mine.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              Text('Mes annonces', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                '${mine.length} publication${mine.length > 1 ? 's' : ''}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
+            ],
+          ],
           const SizedBox(height: 22),
           Text('Préférences', style: theme.textTheme.titleLarge),
           const SizedBox(height: 4),
@@ -171,78 +258,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Application', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 12),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-              boxShadow: appCardShadow,
-            ),
-            child: const Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: Icon(
-                      Icons.language_rounded,
-                      color: AppColors.primary,
-                    ),
-                    title: Text('Langue'),
-                    subtitle: Text('Français (Sénégal)'),
-                    trailing: _LangBadge(),
-                  ),
-                  Divider(height: 1, indent: 16, endIndent: 16),
-                  ListTile(
-                    leading: Icon(
-                      Icons.payments_outlined,
-                      color: AppColors.primary,
-                    ),
-                    title: Text('Devise'),
-                    subtitle: Text(AppConstants.currency),
-                  ),
-                  Divider(height: 1, indent: 16, endIndent: 16),
-                  ListTile(
-                    leading: Icon(
-                      Icons.flag_outlined,
-                      color: AppColors.primary,
-                    ),
-                    title: Text('Marché'),
-                    subtitle: Text(AppConstants.country),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-              boxShadow: appCardShadow,
-            ),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Prochaines étapes',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Connexion (auth), cartes, backend réel, notifications et espace courtier arriveront dans une prochaine version. Ce MVP fonctionne entièrement hors ligne avec des données d’exemple.',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
           Text(
             '${AppConstants.name} · MVP 1.0',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuotaCard extends StatelessWidget {
+  const _QuotaCard({super.key, required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryDark,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(body, style: const TextStyle(color: AppColors.primaryDark)),
         ],
       ),
     );
@@ -272,34 +326,11 @@ class _Pill extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               fontSize: 12,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _LangBadge extends StatelessWidget {
-  const _LangBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.primarySoft,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'FR',
-        style: TextStyle(
-          color: AppColors.primaryDark,
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
-        ),
       ),
     );
   }

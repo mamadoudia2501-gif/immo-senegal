@@ -28,7 +28,8 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
   void initState() {
     super.initState();
     if (widget.listingId != null) {
-      _messageController.text = 'Bonjour, je suis intéressé(e) par cette annonce et souhaite être recontacté(e).';
+      _messageController.text =
+          'Bonjour, je suis intéressé(e) par cette annonce et souhaite être recontacté(e).';
     }
   }
 
@@ -78,8 +79,9 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
                   listing == null
                       ? 'Décrivez votre recherche. Un courtier pourra vous recontacter (simulation locale).'
                       : 'Le courtier recevra vos coordonnées pour cette annonce (enregistrement local).',
-                  style: Theme.of(context).textTheme.bodyLarge
-                      ?.copyWith(color: AppColors.primaryDark),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: AppColors.primaryDark),
                 ),
               ),
               if (listing != null) ...[

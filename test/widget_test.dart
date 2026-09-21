@@ -1,32 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immo_senegal/app.dart';
+import 'package:immo_senegal/core/constants/app_constants.dart';
+import 'package:immo_senegal/data/repositories/auth_repository.dart';
 import 'package:immo_senegal/data/repositories/inquiry_repository.dart';
+import 'package:immo_senegal/data/repositories/listing_repository.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> _pumpApp(WidgetTester tester) async {
+Future<void> _pumpApp(
+  WidgetTester tester, {
+  required AuthRepository auth,
+  required ListingRepository listings,
+  required InquiryRepository inquiries,
+}) async {
   tester.view.physicalSize = const Size(412, 915);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  SharedPreferences.setMockInitialValues({});
-  await initializeDateFormatting('fr_FR');
-  final inquiries = InquiryRepository(
-    preferences: await SharedPreferences.getInstance(),
-  );
-  await inquiries.load();
   await tester.pumpWidget(
-    ImmoApp(inquiryRepository: inquiries, mockLoadDelay: Duration.zero),
+    ImmoApp(
+      inquiryRepository: inquiries,
+      authRepository: auth,
+      listingRepository: listings,
+      mockLoadDelay: Duration.zero,
+    ),
   );
   await tester.pumpAndSettle();
+}
+
+Future<(AuthRepository, ListingRepository, InquiryRepository)> _repos() async {
+  SharedPreferences.setMockInitialValues({});
+  await initializeDateFormatting('fr_FR');
+  final prefs = await SharedPreferences.getInstance();
+  final inquiries = InquiryRepository(preferences: prefs);
+  final auth = AuthRepository(preferences: prefs);
+  final listings = ListingRepository(preferences: prefs);
+  await inquiries.load();
+  await auth.load();
+  await listings.load();
+  return (auth, listings, inquiries);
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('parcours accueil, recherche, fiche et demande', (tester) async {
-    await _pumpApp(tester);
+    final repos = await _repos();
+    await _pumpApp(
+      tester,
+      auth: repos.$1,
+      listings: repos.$2,
+      inquiries: repos.$3,
+    );
 
     expect(find.text('Immo Sénégal'), findsWidgets);
     expect(find.text('Accueil'), findsOneWidget);
@@ -76,7 +102,13 @@ void main() {
   });
 
   testWidgets('annuaire des courtiers', (tester) async {
-    await _pumpApp(tester);
+    final repos = await _repos();
+    await _pumpApp(
+      tester,
+      auth: repos.$1,
+      listings: repos.$2,
+      inquiries: repos.$3,
+    );
 
     await tester.tap(
       find.descendant(
@@ -91,5 +123,37 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Almadies Habitat'), findsWidgets);
     expect(find.byKey(const Key('broker-call-cta')), findsOneWidget);
+  });
+
+  testWidgets('visiteur publie via auth WhatsApp mock', (tester) async {
+    final repos = await _repos();
+    await _pumpApp(
+      tester,
+      auth: repos.$1,
+      listings: repos.$2,
+      inquiries: repos.$3,
+    );
+
+    await tester.tap(find.byKey(const Key('publish-cta')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('WhatsApp'), findsWidgets);
+
+    await tester.enterText(find.byKey(const Key('auth-phone')), '771234567');
+    await tester.tap(find.byKey(const Key('auth-continue')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppConstants.whatsappDemoCode), findsWidgets);
+    await tester.enterText(
+      find.byKey(const Key('auth-code')),
+      AppConstants.whatsappDemoCode,
+    );
+    await tester.tap(find.byKey(const Key('auth-verify')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('annonces gratuites'), findsWidgets);
+    expect(
+      find.textContaining('${AppConstants.freeListingQuota}'),
+      findsWidgets,
+    );
   });
 }

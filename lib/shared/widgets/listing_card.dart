@@ -171,8 +171,9 @@ class _Meta extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),

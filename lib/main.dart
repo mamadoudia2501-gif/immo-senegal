@@ -3,14 +3,23 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'data/repositories/auth_repository.dart';
 import 'data/repositories/inquiry_repository.dart';
+import 'data/repositories/listing_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR');
-  final inquiries = InquiryRepository(
-    preferences: await SharedPreferences.getInstance(),
+  final preferences = await SharedPreferences.getInstance();
+  final inquiries = InquiryRepository(preferences: preferences);
+  final auth = AuthRepository(preferences: preferences);
+  final listings = ListingRepository(preferences: preferences);
+  await Future.wait([inquiries.load(), auth.load(), listings.load()]);
+  runApp(
+    ImmoApp(
+      inquiryRepository: inquiries,
+      authRepository: auth,
+      listingRepository: listings,
+    ),
   );
-  await inquiries.load();
-  runApp(ImmoApp(inquiryRepository: inquiries));
 }

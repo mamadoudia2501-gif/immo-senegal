@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/listing.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/listing_repository.dart';
+import '../../shared/widgets/auth_widgets.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/listing_card.dart';
 import '../../shared/widgets/listing_photo_placeholder.dart';
@@ -24,7 +26,7 @@ class HomeScreen extends StatelessWidget {
       return const Scaffold(body: SafeArea(child: HomeSkeleton()));
     }
 
-    final listings = context.read<ListingRepository>();
+    final listings = context.watch<ListingRepository>();
     final featured = listings.featured();
     final spotlight = featured.first;
     final moreFeatured = featured.skip(1).toList();
@@ -39,7 +41,13 @@ class HomeScreen extends StatelessWidget {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: _Hero(onSearch: () => context.go('/recherche')),
+              child: _Hero(
+                onSearch: () => context.go('/recherche'),
+                onPublish: () => openPublishFlow(
+                  context,
+                  loggedIn: context.read<AuthRepository>().isLoggedIn,
+                ),
+              ),
             ),
             SliverToBoxAdapter(
               child: SectionHeader(
@@ -204,9 +212,10 @@ class _Spotlight extends StatelessWidget {
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.onSearch});
+  const _Hero({required this.onSearch, required this.onPublish});
 
   final VoidCallback onSearch;
+  final VoidCallback onPublish;
 
   @override
   Widget build(BuildContext context) {
@@ -328,6 +337,8 @@ class _Hero extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    PublishCta(onPressed: onPublish, light: true),
                   ],
                 ),
               ),

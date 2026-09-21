@@ -1,13 +1,15 @@
 /// Numéros mobiles sénégalais (préfixe 7x).
-bool isValidSenegalPhone(String input) {
+String senegalLocalDigits(String input) {
   final digits = input.replaceAll(RegExp(r'\D'), '');
-  final local = digits.startsWith('221') ? digits.substring(3) : digits;
-  return RegExp(r'^7\d{8}$').hasMatch(local);
+  return digits.startsWith('221') ? digits.substring(3) : digits;
+}
+
+bool isValidSenegalPhone(String input) {
+  return RegExp(r'^7\d{8}$').hasMatch(senegalLocalDigits(input));
 }
 
 String formatSenegalPhone(String input) {
-  final digits = input.replaceAll(RegExp(r'\D'), '');
-  final local = digits.startsWith('221') ? digits.substring(3) : digits;
+  final local = senegalLocalDigits(input);
   if (local.length != 9) return input.trim();
   return '+221 ${local.substring(0, 2)} ${local.substring(2, 5)} ${local.substring(5, 7)} ${local.substring(7)}';
 }
