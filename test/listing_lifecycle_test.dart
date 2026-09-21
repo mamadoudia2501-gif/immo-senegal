@@ -183,30 +183,32 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('listing-card-u-rent-ui')), findsWidgets);
-
-    await tester.tap(find.byKey(const Key('listing-card-u-rent-ui')).first);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Profil'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.byKey(const Key('listing-mark-rented')),
-      280,
+      find.byKey(const Key('my-listing-u-rent-ui')),
+      240,
       scrollable: find
           .descendant(
-            of: find.byType(CustomScrollView),
+            of: find.byType(ListView),
             matching: find.byType(Scrollable),
           )
           .first,
     );
-    await tester.tap(find.byKey(const Key('listing-mark-rented')));
+    await tester.tap(find.byKey(const Key('listing-manage-u-rent-ui')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Marquer Loué'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('marquée comme louée'), findsOneWidget);
     expect(listings.byId('u-rent-ui')?.lifecycle, ListingLifecycle.loue);
-
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('listing-card-u-rent-ui')), findsNothing);
+    expect(find.text('Loué'), findsWidgets);
 
     await tester.tap(
       find.descendant(
@@ -216,5 +218,6 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('listing-card-u-rent-ui')), findsNothing);
+    expect(find.textContaining('F3 Almadies u-rent-ui'), findsNothing);
   });
 }
