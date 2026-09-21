@@ -76,8 +76,8 @@ const sampleBrokers = <Broker>[
   ),
 ];
 
-const sampleListings = <Listing>[
-  Listing(
+final sampleListings = <Listing>[
+  const Listing(
     id: 'l1',
     title: 'Appartement 3 pièces vue mer',
     city: 'Dakar',
@@ -111,7 +111,7 @@ const sampleListings = <Listing>[
     placeholderHue: 18,
     featured: true,
   ),
-  Listing(
+  const Listing(
     id: 'l3',
     title: 'Terrain viabilisé 300 m²',
     city: 'Rufisque',
@@ -126,7 +126,7 @@ const sampleListings = <Listing>[
     placeholderHue: 78,
     featured: true,
   ),
-  Listing(
+  const Listing(
     id: 'l4',
     title: 'Studio meublé au Plateau',
     city: 'Dakar',
@@ -141,7 +141,7 @@ const sampleListings = <Listing>[
     brokerId: 'b5',
     placeholderHue: 210,
   ),
-  Listing(
+  const Listing(
     id: 'l5',
     title: 'Duplex 4 pièces à Mermoz',
     city: 'Dakar',
@@ -157,7 +157,7 @@ const sampleListings = <Listing>[
     placeholderHue: 32,
     featured: true,
   ),
-  Listing(
+  const Listing(
     id: 'l6',
     title: 'Terrain 500 m² proche lagune',
     city: 'Saly',
@@ -171,7 +171,7 @@ const sampleListings = <Listing>[
     brokerId: 'b3',
     placeholderHue: 92,
   ),
-  Listing(
+  const Listing(
     id: 'l7',
     title: 'Maison coloniale 4 chambres',
     city: 'Saint-Louis',
@@ -186,7 +186,7 @@ const sampleListings = <Listing>[
     brokerId: 'b4',
     placeholderHue: 28,
   ),
-  Listing(
+  const Listing(
     id: 'l8',
     title: 'Appartement F3 à Thiès Nord',
     city: 'Thiès',
@@ -219,7 +219,7 @@ const sampleListings = <Listing>[
     placeholderHue: 195,
     featured: true,
   ),
-  Listing(
+  const Listing(
     id: 'l10',
     title: 'Terrain agricole 1 hectare',
     city: 'Ziguinchor',
@@ -233,7 +233,7 @@ const sampleListings = <Listing>[
     brokerId: 'b6',
     placeholderHue: 110,
   ),
-  Listing(
+  const Listing(
     id: 'l11',
     title: 'Bureau 80 m² Place de l’Indépendance',
     city: 'Dakar',
@@ -247,7 +247,7 @@ const sampleListings = <Listing>[
     brokerId: 'b5',
     placeholderHue: 230,
   ),
-  Listing(
+  const Listing(
     id: 'l12',
     title: 'Maison familiale 6 pièces',
     city: 'Touba',
@@ -262,7 +262,7 @@ const sampleListings = <Listing>[
     brokerId: 'b2',
     placeholderHue: 48,
   ),
-  Listing(
+  const Listing(
     id: 'l13',
     title: 'Appartement F4 Parcelles Assainies',
     city: 'Dakar',
@@ -277,7 +277,7 @@ const sampleListings = <Listing>[
     brokerId: 'b1',
     placeholderHue: 155,
   ),
-  Listing(
+  const Listing(
     id: 'l14',
     title: 'Terrain 400 m² lotissement Mbour',
     city: 'Mbour',
@@ -309,7 +309,7 @@ const sampleListings = <Listing>[
     placeholderHue: 8,
     featured: true,
   ),
-  Listing(
+  const Listing(
     id: 'l16',
     title: 'Maison 3 chambres à Kaolack',
     city: 'Kaolack',
@@ -324,7 +324,7 @@ const sampleListings = <Listing>[
     brokerId: 'b2',
     placeholderHue: 188,
   ),
-  Listing(
+  const Listing(
     id: 'l17',
     title: 'Appartement neuf à Louga',
     city: 'Louga',
@@ -339,7 +339,7 @@ const sampleListings = <Listing>[
     brokerId: 'b4',
     placeholderHue: 250,
   ),
-  Listing(
+  const Listing(
     id: 'l18',
     title: 'Terrain 250 m² Ouakam',
     city: 'Dakar',

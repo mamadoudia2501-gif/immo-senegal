@@ -69,93 +69,113 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Recherche')),
-      body: Column(
-        children: [
-          Material(
-            color: AppColors.cream,
-            elevation: 0,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xE6E4D9C8))),
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                    child: TextField(
-                      key: const Key('search-query-field'),
-                      controller: _queryController,
-                      onChanged: filters.setQuery,
-                      textInputAction: TextInputAction.search,
-                      decoration: const InputDecoration(
-                        hintText: 'Rechercher un bien, un quartier…',
-                        prefixIcon: Icon(Icons.search_rounded),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            children: [
+              Material(
+                color: AppColors.cream,
+                elevation: 0,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xE6E4D9C8)),
+                    ),
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight * 0.58,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                            child: TextField(
+                              key: const Key('search-query-field'),
+                              controller: _queryController,
+                              onChanged: filters.setQuery,
+                              textInputAction: TextInputAction.search,
+                              decoration: const InputDecoration(
+                                hintText: 'Rechercher un bien, un quartier…',
+                                prefixIcon: Icon(Icons.search_rounded),
+                              ),
+                            ),
+                          ),
+                          _FilterBar(filters: filters),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    key: const Key('search-result-count'),
+                                    _resultCountLabel(
+                                      results.length,
+                                      filters.type,
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          color: AppColors.muted,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                                if (filters.hasActiveFilters)
+                                  TextButton(
+                                    key: const Key('filter-reset'),
+                                    onPressed: filters.clear,
+                                    child: const Text('Effacer les filtres'),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  _FilterBar(filters: filters),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            key: const Key('search-result-count'),
-                            _resultCountLabel(results.length, filters.type),
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(
-                                  color: AppColors.muted,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                        ),
-                        if (filters.hasActiveFilters)
-                          TextButton(
-                            key: const Key('filter-reset'),
-                            onPressed: filters.clear,
-                            child: const Text('Effacer les filtres'),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: !bootstrapped
-                ? ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    children: const [
-                      ListingSkeleton(),
-                      SizedBox(height: 16),
-                      ListingSkeleton(),
-                    ],
-                  )
-                : results.isEmpty
-                ? IllustratedEmpty(
-                    illustration: EmptyIllustration.search,
-                    title: 'Aucun bien ne correspond',
-                    message: filters.type == ListingType.location
-                        ? 'Aucune location ne correspond. Changez le type de bien, le F (F2–F6) ou le loyer mensuel.'
-                        : filters.type == ListingType.vente
-                        ? 'Aucune vente ne correspond. Élargissez le prix de vente, le type (appartement, villa) ou la ville.'
-                        : 'Essayez une autre ville, un autre type (location, vente, terrain) ou élargissez le budget en FCFA.',
-                    actionLabel: filters.hasActiveFilters
-                        ? 'Réinitialiser'
-                        : null,
-                    onAction: filters.hasActiveFilters ? filters.clear : null,
-                  )
-                : ListView.separated(
-                    key: const Key('search-results'),
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-                    itemCount: results.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) =>
-                        ListingCard(listing: results[index]),
-                  ),
-          ),
-        ],
+              Expanded(
+                child: !bootstrapped
+                    ? ListView(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        children: const [
+                          ListingSkeleton(),
+                          SizedBox(height: 16),
+                          ListingSkeleton(),
+                        ],
+                      )
+                    : results.isEmpty
+                    ? IllustratedEmpty(
+                        illustration: EmptyIllustration.search,
+                        title: 'Aucun bien ne correspond',
+                        message: filters.type == ListingType.location
+                            ? 'Aucune location ne correspond. Changez le type de bien, le F (F2–F6) ou le loyer mensuel.'
+                            : filters.type == ListingType.vente
+                            ? 'Aucune vente ne correspond. Élargissez le prix de vente, le type (appartement, villa) ou la ville.'
+                            : 'Essayez une autre ville, un autre type (location, vente, terrain) ou élargissez le budget en FCFA.',
+                        actionLabel: filters.hasActiveFilters
+                            ? 'Réinitialiser'
+                            : null,
+                        onAction: filters.hasActiveFilters
+                            ? filters.clear
+                            : null,
+                      )
+                    : ListView.separated(
+                        key: const Key('search-results'),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                        itemCount: results.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) =>
+                            ListingCard(listing: results[index]),
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -294,7 +314,7 @@ class _FilterBar extends StatelessWidget {
                 for (final style in VillaStyle.values)
                   FilterChip(
                     key: Key('filter-villa-${style.name}'),
-                    label: Text(style.label),
+                    label: Text(style.chipLabel),
                     selected: filters.villaStyle == style,
                     showCheckmark: false,
                     onSelected: (selected) =>
@@ -305,20 +325,12 @@ class _FilterBar extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 10),
-        SizedBox(
-          height: 40,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              FilterChip(
-                avatar: const Icon(Icons.place_outlined, size: 16),
-                label: Text(filters.city ?? 'Toutes les villes'),
-                selected: filters.city != null,
-                showCheckmark: false,
-                onSelected: (_) => _pickCity(context, filters),
-              ),
-              const SizedBox(width: 8),
               FilterChip(
                 key: const Key('filter-price'),
                 avatar: const Icon(Icons.payments_outlined, size: 16),
@@ -327,7 +339,13 @@ class _FilterBar extends StatelessWidget {
                 showCheckmark: false,
                 onSelected: (_) => _pickPrice(context, filters),
               ),
-              const SizedBox(width: 8),
+              FilterChip(
+                avatar: const Icon(Icons.place_outlined, size: 16),
+                label: Text(filters.city ?? 'Toutes les villes'),
+                selected: filters.city != null,
+                showCheckmark: false,
+                onSelected: (_) => _pickCity(context, filters),
+              ),
               FilterChip(
                 key: const Key('filter-recent'),
                 avatar: const Icon(Icons.schedule_rounded, size: 16),

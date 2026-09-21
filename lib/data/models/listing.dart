@@ -71,6 +71,7 @@ enum ApartmentLayout {
   final String label;
 
   static ApartmentLayout? fromRooms(int? rooms) {
+    if (rooms == null) return null;
     return switch (rooms) {
       1 => ApartmentLayout.studio,
       2 => ApartmentLayout.f2,
@@ -84,14 +85,15 @@ enum ApartmentLayout {
 }
 
 enum VillaStyle {
-  basique('Villa basique'),
-  standing('Villa standing'),
-  duplex('Villa duplex'),
-  piscine('Villa avec piscine');
+  basique('Villa basique', 'Basique'),
+  standing('Villa standing', 'Standing'),
+  duplex('Villa duplex', 'Duplex'),
+  piscine('Villa avec piscine', 'Piscine');
 
-  const VillaStyle(this.label);
+  const VillaStyle(this.label, this.chipLabel);
 
   final String label;
+  final String chipLabel;
 }
 
 class PricePreset {
@@ -178,7 +180,7 @@ class Listing {
     this.isActive = true,
     this.wasPaid = false,
     this.villaStyle,
-    this.listedAt = const DateTime(2026, 1, 1),
+    this.listedAt,
   });
 
   final String id;
@@ -198,7 +200,9 @@ class Listing {
   final bool isActive;
   final bool wasPaid;
   final VillaStyle? villaStyle;
-  final DateTime listedAt;
+  final DateTime? listedAt;
+
+  DateTime get publishedAt => listedAt ?? DateTime.utc(2026, 1, 1);
 
   String get locationLabel => '$neighborhood, $city';
 
@@ -271,7 +275,7 @@ class Listing {
     'isActive': isActive,
     'wasPaid': wasPaid,
     'villaStyle': villaStyle?.name,
-    'listedAt': listedAt.toIso8601String(),
+    'listedAt': publishedAt.toIso8601String(),
   };
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -297,7 +301,7 @@ class Listing {
           : null,
       listedAt: json['listedAt'] is String
           ? DateTime.parse(json['listedAt'] as String)
-          : const DateTime(2026, 1, 1),
+          : null,
     );
   }
 }

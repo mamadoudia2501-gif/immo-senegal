@@ -75,7 +75,7 @@ class ListingRepository extends ChangeNotifier {
       }
       if (minFcfa != null && listing.priceFcfa < minFcfa) return false;
       if (maxFcfa != null && listing.priceFcfa > maxFcfa) return false;
-      if (recentOnly && listing.listedAt.isBefore(cutoff)) return false;
+      if (recentOnly && listing.publishedAt.isBefore(cutoff)) return false;
       if (needle.isEmpty) return true;
       final haystack =
           '${listing.title} ${listing.city} ${listing.neighborhood} '
@@ -85,7 +85,7 @@ class ListingRepository extends ChangeNotifier {
       return haystack.contains(needle);
     }).toList();
     if (recentOnly) {
-      results.sort((a, b) => b.listedAt.compareTo(a.listedAt));
+      results.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
     }
     return results;
   }

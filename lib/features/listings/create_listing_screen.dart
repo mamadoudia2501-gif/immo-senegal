@@ -236,7 +236,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 children: [
                   for (final style in VillaStyle.values)
                     ChoiceChip(
-                      label: Text(style.label),
+                      label: Text(style.chipLabel),
                       selected: _villaStyle == style,
                       onSelected: (_) => setState(() => _villaStyle = style),
                     ),

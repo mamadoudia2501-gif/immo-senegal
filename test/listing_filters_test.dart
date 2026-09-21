@@ -168,6 +168,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('filter-type-location')));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('filter-price')));
     await tester.tap(find.byKey(const Key('filter-price')));
     await tester.pumpAndSettle();
 
