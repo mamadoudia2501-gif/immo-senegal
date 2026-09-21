@@ -2,7 +2,7 @@
 
 Application mobile Flutter (iOS et Android) pour le marché immobilier sénégalais : locations, ventes, terrains, courtiers, et publication d’annonces par compte.
 
-Ce dépôt contient un **MVP hors ligne** : données d’exemple, interface en français, prix en **FCFA**. Aucun backend, WhatsApp réel ou prestataire de paiement n’est requis.
+Ce dépôt contient un **MVP** : interface en français, prix en **FCFA**. Par défaut tout tourne **hors ligne** (mock `shared_preferences`). Un backend **Supabase (test)** peut être branché via `--dart-define` sans mettre de secrets dans le code.
 
 ## Prérequis
 
@@ -23,6 +23,8 @@ flutter doctor
 flutter pub get
 flutter run
 ```
+
+Sans variables Supabase, l’app utilise le **mock local**. Pour le projet test distant, voir [Supabase (environnement test)](#supabase-environnement-test).
 
 Choisir un simulateur iOS, un émulateur Android, ou un appareil physique. Pour cibler une plateforme :
 
@@ -72,6 +74,47 @@ Les photos des annonces du catalogue d’exemple sont des **placeholders** color
 
 La demande peut être rédigée sans compte. À l’envoi, la conversation est créée et un **code WhatsApp mock** est demandé sur le numéro saisi, puis le chat s’ouvre. Si vous êtes déjà connecté, nom et téléphone sont repris du compte et le chat s’ouvre tout de suite. Il faut le même numéro pour revoir le fil plus tard (onglet Discussions).
 
+## Supabase (environnement test)
+
+Le mock local reste le défaut. Quand `SUPABASE_URL` et `SUPABASE_ANON_KEY` (clé **anon / public** uniquement) sont fournis au compile, l’app bascule sur Supabase. **Ne jamais** mettre la clé `service_role` dans l’app, le README ou git.
+
+### Étapes pour Mamadou (projet test)
+
+1. Créer un projet gratuit sur [supabase.com](https://supabase.com) (région proche, ex. `eu-west`).
+2. **Project Settings → API** : copier l’**URL** et la clé **`anon` `public`** (publishable). Ignorer `service_role`. L’app la lit via `SUPABASE_ANON_KEY`.
+3. **SQL Editor** : coller et exécuter le fichier  
+   `supabase/migrations/20260921180000_init.sql`  
+   (tables `profiles`, `listings` + photos, `inquiries`, `conversations`, `chat_messages`, `stories`, `story_requests` (vue), `story_subscriptions`, RLS, buckets `listing-photos` et `story-media`).
+4. **Authentication → Providers** : activer **Phone** (OTP) pour le login réel. En attendant, le mock local (`flutter run` sans dart-define) reste utilisable.
+5. **Storage** : les buckets sont créés par le SQL. Vérifier `listing-photos` (public, images, 5 Mo) et `story-media` (public, image/vidéo, 20 Mo).
+6. Compte **admin** : créer d’abord l’utilisateur dans Authentication, puis dans SQL (en remplaçant l’UUID, **sans** coller de numéro ni d’OTP dans le dépôt) :
+
+```sql
+update public.profiles
+set role = 'admin'
+where id = '<uuid-auth-du-compte>';
+```
+
+7. Lancer l’app **test** :
+
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=https://xxxx.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=eyJhbGciOi...
+```
+
+Pour forcer le mock malgré les clés : `--dart-define=IMMO_FORCE_LOCAL=true`.
+
+### RLS (rappel)
+
+- Annonceur : CRUD sur **ses** annonces (`owner_id = auth.uid()`).
+- Public (`anon`) : lecture des annonces `status = 'active'` et `is_active = true` seulement (loué / vendu / supprimée invisibles).
+- Admin : politiques `is_admin()` (rôle en base, pas dans l’app).
+- Chat : lecture/écriture **participants** uniquement (admin en lecture).
+- Stories publiques : `status = 'approved'` et `expires_at > now()`.
+
+Les tests CI et `flutter test` n’ont pas de dart-define : ils restent sur le mock.
+
 ## Structure du projet
 
 ```
@@ -82,20 +125,25 @@ lib/
   data/
     models/                 # Listing, Broker, Inquiry, Conversation, AppUser
     mock/sample_data.dart   # Annonces et courtiers d’exemple
-    repositories/           # Accès données (mock + persistance locale)
+    repositories/           # Mock locaux (SharedPreferences)
+    supabase/               # Implémentations Supabase (si dart-define)
+    mappers/                # Mapping lignes SQL ↔ modèles
+    backend/                # Détection local vs Supabase
   features/
     home / search / listings / brokers / inquiries / profile / auth / admin / stories / shell
   shared/widgets/           # Cartes, badges, CTA publication
+supabase/migrations/        # Schéma SQL + RLS + buckets
 ```
 
 ## Prochaines étapes
 
-Hors périmètre de cette version :
+Hors périmètre immédiat :
 
-1. Vrai WhatsApp / OTP et backend d’auth
-2. PSP réel (Wave, Orange Money, carte)
-3. Cartes (clé SDK Maps à provisionner)
-4. Notifications push et back-office distant
+1. Brancher les secrets du projet test Mamadou (clé anon seulement) et valider Phone OTP
+2. Upload réel vers les buckets (4 photos max déjà côté SQL)
+3. PSP réel (Wave, Orange Money, carte)
+4. Cartes (clé SDK Maps à provisionner)
+5. Notifications push
 
 ## Licence
 

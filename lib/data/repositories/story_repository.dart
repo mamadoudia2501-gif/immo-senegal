@@ -13,6 +13,10 @@ class StoryRepository extends ChangeNotifier {
     : _preferences = preferences,
       _clock = clock ?? DateTime.now;
 
+  StoryRepository.remote({DateTime Function()? clock})
+    : _preferences = null,
+      _clock = clock ?? DateTime.now;
+
   static const _storageKey = 'immo_senegal_stories';
 
   SharedPreferences? _preferences;

@@ -10,6 +10,8 @@ import '../models/app_user.dart';
 class AuthRepository extends ChangeNotifier {
   AuthRepository({SharedPreferences? preferences}) : _preferences = preferences;
 
+  AuthRepository.remote() : _preferences = null;
+
   static const _sessionKey = 'immo_senegal_session_phone';
   static const _usersKey = 'immo_senegal_users';
 

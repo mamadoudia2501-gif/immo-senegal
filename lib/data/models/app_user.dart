@@ -4,10 +4,12 @@ import '../../core/constants/app_constants.dart';
 import '../../core/utils/phone.dart';
 
 enum UserRole {
+  visitor,
   advertiser,
   admin;
 
   String get label => switch (this) {
+    UserRole.visitor => 'Visiteur',
     UserRole.advertiser => 'Annonceur',
     UserRole.admin => 'Administrateur',
   };

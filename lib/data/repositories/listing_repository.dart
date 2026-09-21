@@ -12,6 +12,9 @@ class ListingRepository extends ChangeNotifier {
   ListingRepository({SharedPreferences? preferences})
     : _preferences = preferences;
 
+  /// Réservé aux implémentations distantes (Supabase) : pas de prefs locales.
+  ListingRepository.remote() : _preferences = null;
+
   static const _storageKey = 'immo_senegal_user_listings';
 
   SharedPreferences? _preferences;
