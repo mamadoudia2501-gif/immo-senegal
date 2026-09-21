@@ -40,17 +40,15 @@ flutter analyze
 flutter test
 ```
 
-## Comptes de démo
+## Comptes
 
 Tout est local (SharedPreferences). **Aucun SMS WhatsApp ni paiement réel.**
 
 | Rôle | Comment entrer | Droits |
 | --- | --- | --- |
 | **Visiteur** | Aucun compte | Parcourir les annonces, faire une demande |
-| **Annonceur** | N’importe quel n° sénégalais `7x xx xx xx xx` + code **123456** | **4 annonces gratuites**, puis **100 FCFA** / annonce (tap de paiement mock) |
-| **Administrateur** | `77 000 00 00` (`+221 77 000 00 00`) + code **123456** | Publication **gratuite illimitée**, modération (activer / masquer) |
-
-Le code WhatsApp de test est toujours affiché à l’écran : **123456**.
+| **Annonceur** | N’importe quel n° sénégalais `7x xx xx xx xx` + code WhatsApp de démo **123456** (affiché à l’écran pour ce rôle) | **4 annonces gratuites**, puis **100 FCFA** / annonce (tap de paiement mock) |
+| **Administrateur** | Identifiants fournis **hors application** / au propriétaire. Ils ne sont pas affichés dans l’app ni dans ce README. | Publication **gratuite illimitée**, modération (activer / masquer) |
 
 CTA **Publier une annonce** (accueil et profil) : mène à l’inscription si vous n’êtes pas connecté.
 
@@ -62,9 +60,9 @@ CTA **Publier une annonce** (accueil et profil) : mène à l’inscription si vo
 - **Courtiers** : annuaire, fiche, appel, WhatsApp (lien mock) et e-mail
 - **Demandes** : formulaire (nom, téléphone sénégalais, message) enregistré **localement**
 - **Profil** : visiteur, annonceur (quota) ou admin, langue FR, devise FCFA
-- **Publication** : formulaire terrain / location / vente, quota puis paiement mock
+- **Publication** : formulaire terrain / location / vente, **1 à 4 photos** mock, quota puis paiement mock
 
-Les photos des annonces sont des **placeholders** colorés (pas de CDN). Session, quota et annonces utilisateur sont persistés avec `shared_preferences`.
+Les photos des annonces du catalogue d’exemple sont des **placeholders** colorés. Les annonces publiées stockent jusqu’à 4 photos mock (vues prédéfinies). Session, quota et annonces utilisateur sont persistés avec `shared_preferences`.
 
 ## Structure du projet
 

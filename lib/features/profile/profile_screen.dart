@@ -71,6 +71,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     user == null
                         ? 'Parcourez les annonces sans compte'
+                        : user.isAdmin
+                        ? 'Compte administrateur'
                         : user.phone,
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Color(0xE6FFFFFF)),
@@ -110,8 +112,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () => context.push('/connexion'),
               child: const Text('Se connecter / s’inscrire'),
             ),
-            const SizedBox(height: 16),
-            const DemoAccountsCard(),
           ] else ...[
             if (user.isAdmin)
               const _QuotaCard(

@@ -22,6 +22,12 @@ class AuthRepository extends ChangeNotifier {
 
   bool get isLoggedIn => currentUser != null;
   bool get isAdmin => currentUser?.isAdmin ?? false;
+  bool get isPendingAdmin {
+    final phone = pendingPhone;
+    if (phone == null) return false;
+    return senegalLocalDigits(phone) == AppConstants.adminPhoneLocal;
+  }
+
   bool get canPublishWithoutPayment =>
       currentUser != null &&
       (currentUser!.isAdmin || currentUser!.freeListingsRemaining > 0);
@@ -39,7 +45,7 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Simule l’envoi d’un code WhatsApp. Le code de démo est toujours 123456.
+  /// Simule l’envoi d’un code WhatsApp (aucun SMS réel).
   Future<void> requestCode({required String phone, String? name}) async {
     pendingPhone = formatSenegalPhone(phone);
     pendingName = (name ?? '').trim().isEmpty ? null : name!.trim();
@@ -48,10 +54,11 @@ class AuthRepository extends ChangeNotifier {
 
   Future<bool> verifyDemoCode(String code) async {
     if (pendingPhone == null) return false;
-    if (code.replaceAll(RegExp(r'\D'), '') != AppConstants.whatsappDemoCode) {
+    final local = senegalLocalDigits(pendingPhone!);
+    final expected = AppConstants.otpForLocalPhone(local);
+    if (code.replaceAll(RegExp(r'\D'), '') != expected) {
       return false;
     }
-    final local = senegalLocalDigits(pendingPhone!);
     final existing = _users[local];
     final isAdmin = local == AppConstants.adminPhoneLocal;
     final user =

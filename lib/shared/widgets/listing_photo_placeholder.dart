@@ -24,7 +24,7 @@ class ListingPhotoPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = borderRadius ?? BorderRadius.circular(20);
     final compact = (height ?? 160) < 90;
-    final start = Listing.colorForHue(hue ?? listing.placeholderHue);
+    final start = Listing.colorForHue(hue ?? listing.coverHue);
     final end = Color.lerp(start, Colors.black, 0.38)!;
 
     final image = Stack(

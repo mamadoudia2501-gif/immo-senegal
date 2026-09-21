@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/phone.dart';
 import '../../data/repositories/auth_repository.dart';
-import '../../shared/widgets/auth_widgets.dart';
 
 class PhoneAuthScreen extends StatefulWidget {
   const PhoneAuthScreen({super.key, this.nextPath});
@@ -61,7 +60,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Un code WhatsApp de démo s’affichera à l’écran. Aucun SMS réel n’est envoyé.',
+              'Un code WhatsApp de démo peut s’afficher pour tester un compte annonceur. Aucun SMS réel n’est envoyé.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.muted,
               ),
@@ -98,13 +97,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
               key: const Key('auth-continue'),
               onPressed: _sending ? null : _continue,
               child: Text(_sending ? 'Envoi…' : 'Recevoir le code WhatsApp'),
-            ),
-            const SizedBox(height: 22),
-            DemoAccountsCard(
-              onFillAdmin: () {
-                _phoneController.text = '770000000';
-                _nameController.text = 'Admin Immo';
-              },
             ),
           ],
         ),

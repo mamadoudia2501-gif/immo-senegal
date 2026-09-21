@@ -54,6 +54,7 @@ class _WhatsAppCodeScreenState extends State<WhatsAppCodeScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthRepository>();
     final phone = auth.pendingPhone;
+    final hideDemoCode = auth.isPendingAdmin;
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Code WhatsApp')),
@@ -64,54 +65,94 @@ class _WhatsAppCodeScreenState extends State<WhatsAppCodeScreen> {
           const SizedBox(height: 8),
           Text(
             phone == null
-                ? 'Saisissez le code de démo pour valider le numéro.'
+                ? 'Saisissez le code reçu pour valider le numéro.'
+                : hideDemoCode
+                ? 'Un message WhatsApp a été simulé. Saisissez le code reçu. Aucun envoi réel.'
                 : 'Un message WhatsApp a été simulé vers $phone. Aucun envoi réel.',
             style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: 20),
-          Container(
-            key: const Key('whatsapp-demo-code'),
-            padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-              border: Border.all(color: const Color(0xFFB7D9C8)),
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  'Code WhatsApp de démo',
-                  style: TextStyle(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w700,
+          if (!hideDemoCode)
+            Container(
+              key: const Key('whatsapp-demo-code'),
+              padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(AppRadii.lg),
+                border: Border.all(color: const Color(0xFFB7D9C8)),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Code WhatsApp de démo',
+                    style: TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppConstants.whatsappDemoCode,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    letterSpacing: 8,
+                  const SizedBox(height: 8),
+                  Text(
+                    AppConstants.whatsappDemoCode,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      letterSpacing: 8,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Utilisez ce code pour tester (annonceur).',
+                    style: TextStyle(color: AppColors.primaryDark),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              key: const Key('whatsapp-admin-code-hidden'),
+              padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.sand.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
+                border: Border.all(color: const Color(0xFFE4D9C8)),
+              ),
+              child: const Column(
+                children: [
+                  Icon(
+                    Icons.lock_outline_rounded,
                     color: AppColors.primaryDark,
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Utilisez ce code pour tester (123456).',
-                  style: TextStyle(color: AppColors.primaryDark),
-                ),
-              ],
+                  SizedBox(height: 8),
+                  Text(
+                    'Saisissez le code reçu',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Pour ce compte, le code n’est pas affiché dans l’application.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.primaryDark),
+                  ),
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 22),
           TextField(
             key: const Key('auth-code'),
             controller: _codeController,
             keyboardType: TextInputType.number,
-            maxLength: 6,
+            maxLength: 8,
             decoration: InputDecoration(
-              labelText: 'Code à 6 chiffres',
+              labelText: 'Code WhatsApp',
               prefixIcon: const Icon(Icons.lock_outline_rounded),
-              errorText: _error ? 'Code incorrect. Essayez 123456.' : null,
+              errorText: _error
+                  ? (hideDemoCode
+                        ? 'Code incorrect.'
+                        : 'Code incorrect. Essayez ${AppConstants.whatsappDemoCode}.')
+                  : null,
             ),
           ),
           const SizedBox(height: 12),

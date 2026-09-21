@@ -161,6 +161,40 @@ class PricePreset {
 }
 
 @immutable
+class ListingPhoto {
+  const ListingPhoto({
+    required this.id,
+    required this.label,
+    required this.hue,
+  });
+
+  final String id;
+  final String label;
+  final double hue;
+
+  static const catalog = <ListingPhoto>[
+    ListingPhoto(id: 'facade', label: 'Façade', hue: 32),
+    ListingPhoto(id: 'salon', label: 'Salon', hue: 168),
+    ListingPhoto(id: 'chambre', label: 'Chambre', hue: 210),
+    ListingPhoto(id: 'cuisine', label: 'Cuisine', hue: 18),
+    ListingPhoto(id: 'sdb', label: 'Salle d’eau', hue: 195),
+    ListingPhoto(id: 'exterieur', label: 'Extérieur', hue: 92),
+    ListingPhoto(id: 'piscine', label: 'Piscine', hue: 188),
+    ListingPhoto(id: 'vue', label: 'Vue', hue: 145),
+  ];
+
+  Map<String, dynamic> toJson() => {'id': id, 'label': label, 'hue': hue};
+
+  factory ListingPhoto.fromJson(Map<String, dynamic> json) {
+    return ListingPhoto(
+      id: json['id'] as String,
+      label: json['label'] as String? ?? 'Photo',
+      hue: (json['hue'] as num?)?.toDouble() ?? 160,
+    );
+  }
+}
+
+@immutable
 class Listing {
   const Listing({
     required this.id,
@@ -181,6 +215,7 @@ class Listing {
     this.wasPaid = false,
     this.villaStyle,
     this.listedAt,
+    this.photos = const [],
   });
 
   final String id;
@@ -201,8 +236,11 @@ class Listing {
   final bool wasPaid;
   final VillaStyle? villaStyle;
   final DateTime? listedAt;
+  final List<ListingPhoto> photos;
 
   DateTime get publishedAt => listedAt ?? DateTime.utc(2026, 1, 1);
+
+  double get coverHue => photos.isNotEmpty ? photos.first.hue : placeholderHue;
 
   String get locationLabel => '$neighborhood, $city';
 
@@ -225,11 +263,16 @@ class Listing {
 
   Color get placeholderColor => colorForHue(placeholderHue);
 
-  List<double> get galleryHues => [
-    placeholderHue,
-    (placeholderHue + 22) % 360,
-    (placeholderHue + 46) % 360,
-  ];
+  List<double> get galleryHues {
+    if (photos.isNotEmpty) {
+      return [for (final photo in photos) photo.hue];
+    }
+    return [
+      placeholderHue,
+      (placeholderHue + 22) % 360,
+      (placeholderHue + 46) % 360,
+    ];
+  }
 
   static Color colorForHue(double hue) =>
       HSVColor.fromAHSV(1, hue, 0.42, 0.62).toColor();
@@ -254,6 +297,7 @@ class Listing {
       wasPaid: wasPaid,
       villaStyle: villaStyle,
       listedAt: listedAt,
+      photos: photos,
     );
   }
 
@@ -276,6 +320,7 @@ class Listing {
     'wasPaid': wasPaid,
     'villaStyle': villaStyle?.name,
     'listedAt': publishedAt.toIso8601String(),
+    'photos': photos.map((photo) => photo.toJson()).toList(),
   };
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -302,6 +347,11 @@ class Listing {
       listedAt: json['listedAt'] is String
           ? DateTime.parse(json['listedAt'] as String)
           : null,
+      photos: [
+        for (final item in json['photos'] as List? ?? const [])
+          if (item is Map)
+            ListingPhoto.fromJson(Map<String, dynamic>.from(item)),
+      ],
     );
   }
 }

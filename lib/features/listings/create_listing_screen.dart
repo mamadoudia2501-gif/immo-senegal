@@ -31,6 +31,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   var _villaStyle = VillaStyle.basique;
   var _city = AppConstants.cities.first;
   var _submitting = false;
+  var _photoError = false;
+  final _photos = <ListingPhoto>[];
 
   @override
   void dispose() {
@@ -44,7 +46,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final formOk = _formKey.currentState?.validate() ?? false;
+    final hasPhotos = _photos.length >= AppConstants.minListingPhotos;
+    if (!hasPhotos) {
+      setState(() => _photoError = true);
+    }
+    if (!formOk || !hasPhotos) return;
     final auth = context.read<AuthRepository>();
     if (!auth.isLoggedIn) {
       context.go('/connexion?next=/annonce/nouvelle');
@@ -93,10 +100,69 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       villaStyle: _kind == PropertyKind.villa ? _villaStyle : null,
       listedAt: DateTime.now(),
       wasPaid: slot == ListingSlot.paid,
+      photos: List.of(_photos),
     );
     await context.read<ListingRepository>().add(listing);
     if (!mounted) return;
     context.go('/bien/${listing.id}');
+  }
+
+  Future<void> _pickPhoto() async {
+    if (_photos.length >= AppConstants.maxListingPhotos) return;
+    final selected = await showModalBottomSheet<ListingPhoto>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ajouter une photo',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Galerie mock : choisissez une vue du bien (hors ligne).',
+                  style: TextStyle(color: AppColors.muted),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final photo in ListingPhoto.catalog)
+                      ActionChip(
+                        key: Key('create-photo-option-${photo.id}'),
+                        avatar: CircleAvatar(
+                          backgroundColor: Listing.colorForHue(photo.hue),
+                        ),
+                        label: Text(photo.label),
+                        onPressed: () => Navigator.pop(context, photo),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (selected == null || !mounted) return;
+    if (_photos.length >= AppConstants.maxListingPhotos) return;
+    setState(() {
+      _photos.add(
+        ListingPhoto(
+          id: '${selected.id}-${_photos.length}-${DateTime.now().microsecondsSinceEpoch}',
+          label: selected.label,
+          hue: selected.hue,
+        ),
+      );
+      _photoError = false;
+    });
   }
 
   Future<bool?> _confirmPayment() {
@@ -168,6 +234,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     ? 'Ensuite : ${formatFcfa(AppConstants.extraListingPriceFcfa)} par annonce (mock).'
                     : 'La prochaine annonce coûtera ${formatFcfa(AppConstants.extraListingPriceFcfa)} (paiement mock).',
               ),
+            const SizedBox(height: 16),
+            _PhotoPicker(
+              photos: _photos,
+              error: _photoError,
+              onAdd: _pickPhoto,
+              onRemove: (photo) => setState(() => _photos.remove(photo)),
+            ),
             const SizedBox(height: 16),
             Text('Type', style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
@@ -359,6 +432,153 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PhotoPicker extends StatelessWidget {
+  const _PhotoPicker({
+    required this.photos,
+    required this.error,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<ListingPhoto> photos;
+  final bool error;
+  final VoidCallback onAdd;
+  final ValueChanged<ListingPhoto> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text('Photos du bien', style: theme.textTheme.titleSmall),
+            ),
+            Text(
+              key: const Key('create-photos-count'),
+              '${photos.length}/${AppConstants.maxListingPhotos}',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: error ? Colors.red.shade700 : AppColors.muted,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '1 photo minimum, ${AppConstants.maxListingPhotos} maximum (galerie mock).',
+          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+        ),
+        if (error) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Ajoutez au moins une photo.',
+            style: TextStyle(
+              color: Colors.red.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final photo in photos)
+              _PhotoThumb(photo: photo, onRemove: () => onRemove(photo)),
+            if (photos.length < AppConstants.maxListingPhotos)
+              OutlinedButton(
+                key: const Key('create-add-photo'),
+                onPressed: onAdd,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(92, 92),
+                  padding: const EdgeInsets.all(8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_a_photo_outlined),
+                    SizedBox(height: 4),
+                    Text(
+                      'Ajouter\nune photo',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, height: 1.2),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PhotoThumb extends StatelessWidget {
+  const _PhotoThumb({required this.photo, required this.onRemove});
+
+  final ListingPhoto photo;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      key: Key('create-photo-thumb-${photo.id}'),
+      width: 92,
+      height: 92,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Listing.colorForHue(photo.hue),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+                  child: Text(
+                    photo.label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: IconButton.filled(
+              key: Key('create-photo-remove-${photo.id}'),
+              tooltip: 'Supprimer',
+              onPressed: onRemove,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.ink,
+                minimumSize: const Size(28, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: EdgeInsets.zero,
+              ),
+              icon: const Icon(Icons.close_rounded, size: 16),
+            ),
+          ),
+        ],
       ),
     );
   }
