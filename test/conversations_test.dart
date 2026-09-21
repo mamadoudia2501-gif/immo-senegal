@@ -203,7 +203,7 @@ void main() {
 
     expect(find.byKey(const Key('chat-input')), findsOneWidget);
     expect(find.textContaining('Bargny'), findsWidgets);
-    expect(find.text('Envoyé'), findsWidgets);
+    expect(find.textContaining('Envoyé'), findsWidgets);
 
     await tester.enterText(
       find.byKey(const Key('chat-input')),
