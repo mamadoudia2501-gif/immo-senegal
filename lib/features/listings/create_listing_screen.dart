@@ -102,9 +102,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       wasPaid: slot == ListingSlot.paid,
       photos: List.of(_photos),
     );
-    await context.read<ListingRepository>().add(listing);
+    final created = await context.read<ListingRepository>().add(listing);
     if (!mounted) return;
-    context.go('/bien/${listing.id}');
+    context.go('/bien/${created.id}');
   }
 
   Future<void> _pickPhoto() async {

@@ -44,12 +44,14 @@ flutter test
 
 ## Comptes
 
-Tout est local (SharedPreferences). **Aucun SMS WhatsApp ni paiement réel.**
+Sans dart-define, tout est local (SharedPreferences). **Aucun SMS WhatsApp ni paiement réel.**
+
+Avec le projet test Supabase (`--dart-define`), l’auth tente un **OTP SMS** ; si Phone n’est pas activé, un **e-mail de secours** `{8chiffres}@immo-senegal.test` est utilisé et le numéro est écrit sur `profiles`.
 
 | Rôle | Comment entrer | Droits |
 | --- | --- | --- |
-| **Visiteur** | Aucun compte | Parcourir les annonces ; une demande ouvre le chat après confirmation du n° (OTP mock) |
-| **Annonceur** | N’importe quel n° sénégalais `7x xx xx xx xx` + code WhatsApp de démo **123456** (affiché à l’écran pour ce rôle) | **4 annonces gratuites**, puis **100 FCFA** / annonce (tap de paiement mock) |
+| **Visiteur** | Aucun compte | Parcourir les annonces ; une demande ouvre le chat après confirmation du n° (OTP mock en local) |
+| **Annonceur** | N’importe quel n° sénégalais `7x xx xx xx xx` + code WhatsApp de démo **123456** en local (affiché à l’écran pour ce rôle). En Supabase : code SMS / e-mail, jamais affiché. | **4 annonces gratuites**, puis **100 FCFA** / annonce (tap de paiement mock) |
 | **Administrateur** | Identifiants fournis **hors application** / au propriétaire. Ils ne sont pas affichés dans l’app ni dans ce README. | Publication **gratuite illimitée**, modération (activer / masquer) |
 
 CTA **Publier une annonce** (accueil et profil) : mène à l’inscription si vous n’êtes pas connecté.
@@ -76,18 +78,23 @@ La demande peut être rédigée sans compte. À l’envoi, la conversation est c
 
 ## Supabase (environnement test)
 
-Le mock local reste le défaut. Quand `SUPABASE_URL` et `SUPABASE_ANON_KEY` (clé **anon / public** uniquement) sont fournis au compile, l’app bascule sur Supabase. **Ne jamais** mettre la clé `service_role` dans l’app, le README ou git.
+Le mock local reste le défaut. Quand `SUPABASE_URL` et `SUPABASE_ANON_KEY` (clé **anon / public** uniquement) sont fournis au compile, l’app bascule sur Supabase. **Ne jamais** mettre la clé `service_role` dans l’app, le README ou git. **Ne jamais coller la clé anon** dans ce dépôt.
 
-### Étapes pour Mamadou (projet test)
+Projet test déjà créé :
 
-1. Créer un projet gratuit sur [supabase.com](https://supabase.com) (région proche, ex. `eu-west`).
-2. **Project Settings → API** : copier l’**URL** et la clé **`anon` `public`** (publishable). Ignorer `service_role`. L’app la lit via `SUPABASE_ANON_KEY`.
-3. **SQL Editor** : coller et exécuter le fichier  
-   `supabase/migrations/20260921180000_init.sql`  
-   (tables `profiles`, `listings` + photos, `inquiries`, `conversations`, `chat_messages`, `stories`, `story_requests` (vue), `story_subscriptions`, RLS, buckets `listing-photos` et `story-media`).
-4. **Authentication → Providers** : activer **Phone** (OTP) pour le login réel. En attendant, le mock local (`flutter run` sans dart-define) reste utilisable.
-5. **Storage** : les buckets sont créés par le SQL. Vérifier `listing-photos` (public, images, 5 Mo) et `story-media` (public, image/vidéo, 20 Mo).
-6. Compte **admin** : créer d’abord l’utilisateur dans Authentication, puis dans SQL (en remplaçant l’UUID, **sans** coller de numéro ni d’OTP dans le dépôt) :
+- Nom : `immo-senegal-test`
+- Ref : `zwjsnlcnyqhrtmhdjphb`
+- URL : `https://zwjsnlcnyqhrtmhdjphb.supabase.co`
+- Région : `eu-west-3` (Paris)
+- Schéma déjà appliqué via la migration `immo_senegal_core_schema` : `profiles`, `listings` (`status` = `active` \| `loue` \| `vendu` \| `supprimee`), `inquiries`, `conversations`, `messages`, `stories`, buckets `listing-images` + `story-media`, RLS, trigger profil sur `auth.users`.
+
+Le catalogue public distante filtre **`status = active`**. Chat, stories et cycle de vie Loué / Vendu / Supprimer passent par ces tables.
+
+### Lancer l’app contre le projet test
+
+1. **Project Settings → API** : copier la clé **`anon` `public`** (publishable). Ignorer `service_role`.
+2. **Authentication → Providers** : activer **Phone** (OTP) si possible. Sinon l’app bascule sur un e-mail de secours `{8chiffres}@immo-senegal.test` et écrit le téléphone sur `profiles` (voir logs Auth / Inbucket du projet).
+3. Compte **admin** : créer l’utilisateur dans Authentication, puis en SQL (en remplaçant l’UUID, **sans** coller de numéro ni d’OTP dans le dépôt) :
 
 ```sql
 update public.profiles
@@ -95,22 +102,22 @@ set role = 'admin'
 where id = '<uuid-auth-du-compte>';
 ```
 
-7. Lancer l’app **test** :
+4. Lancer :
 
 ```bash
-flutter run \
-  --dart-define=SUPABASE_URL=https://xxxx.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=eyJhbGciOi...
+flutter run --dart-define=SUPABASE_URL=https://zwjsnlcnyqhrtmhdjphb.supabase.co --dart-define=SUPABASE_ANON_KEY=<anon key from dashboard>
 ```
 
-Pour forcer le mock malgré les clés : `--dart-define=IMMO_FORCE_LOCAL=true`.
+Sans ces dart-define (ou si l’un est vide), l’app reste sur le **mock local** (dev offline). Pour forcer le mock malgré les clés : `--dart-define=IMMO_FORCE_LOCAL=true`.
+
+Le fichier `supabase/migrations/20260921180000_init.sql` est la **référence** (tables `messages`, bucket `listing-images`) pour un nouvel environnement. Le projet test n’a **pas** besoin de le ré-exécuter s’il a déjà `immo_senegal_core_schema`.
 
 ### RLS (rappel)
 
 - Annonceur : CRUD sur **ses** annonces (`owner_id = auth.uid()`).
-- Public (`anon`) : lecture des annonces `status = 'active'` et `is_active = true` seulement (loué / vendu / supprimée invisibles).
+- Public (`anon`) : lecture des annonces `status = 'active'` (et `is_active = true` si la colonne existe). Loué / vendu / supprimée invisibles.
 - Admin : politiques `is_admin()` (rôle en base, pas dans l’app).
-- Chat : lecture/écriture **participants** uniquement (admin en lecture).
+- Chat : lecture/écriture **participants** uniquement (admin en lecture) sur `messages`.
 - Stories publiques : `status = 'approved'` et `expires_at > now()`.
 
 Les tests CI et `flutter test` n’ont pas de dart-define : ils restent sur le mock.
@@ -139,11 +146,10 @@ supabase/migrations/        # Schéma SQL + RLS + buckets
 
 Hors périmètre immédiat :
 
-1. Brancher les secrets du projet test Mamadou (clé anon seulement) et valider Phone OTP
-2. Upload réel vers les buckets (4 photos max déjà côté SQL)
-3. PSP réel (Wave, Orange Money, carte)
-4. Cartes (clé SDK Maps à provisionner)
-5. Notifications push
+1. Upload réel vers les buckets `listing-images` et `story-media` (4 photos max déjà côté SQL)
+2. PSP réel (Wave, Orange Money, carte)
+3. Cartes (clé SDK Maps à provisionner)
+4. Notifications push
 
 ## Licence
 

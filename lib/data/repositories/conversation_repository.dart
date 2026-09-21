@@ -40,6 +40,9 @@ class ConversationRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// No-op en local. En Supabase, pousse un fil créé avant la session Auth.
+  Future<void> syncRemote() async {}
+
   Conversation? byId(String id) {
     for (final conversation in _conversations) {
       if (conversation.id == id) return conversation;

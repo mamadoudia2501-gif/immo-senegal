@@ -1,6 +1,9 @@
--- Immo Sénégal — schéma test (Supabase)
--- À coller dans SQL Editor (ou : supabase db push)
--- Ne contient aucun secret admin (n° / OTP). Promotion admin : voir la fin du fichier.
+-- Immo Sénégal — schéma aligné sur le projet test
+-- Projet : immo-senegal-test (zwjsnlcnyqhrtmhdjphb, eu-west-3)
+-- URL    : https://zwjsnlcnyqhrtmhdjphb.supabase.co
+-- Déjà appliqué sur le projet test via la migration `immo_senegal_core_schema`.
+-- Ce fichier sert de référence / nouvel environnement (SQL Editor ou supabase db push).
+-- Ne contient aucun secret admin (n° / OTP / clé anon).
 
 begin;
 
@@ -23,15 +26,20 @@ create table if not exists public.profiles (
   free_listings_remaining int not null default 4,
   published_count int not null default 0,
   paid_count int not null default 0,
+  story_subscription_until timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles
+  add column if not exists story_subscription_until timestamptz;
 
 create index if not exists profiles_role_idx on public.profiles (role);
 
 -- ---------------------------------------------------------------------------
 -- Annonces. status : active | loue | vendu | supprimee
 -- is_active = modération admin (masquer sans changer le cycle de vie)
+-- images = jsonb (max 4), bucket storage `listing-images`
 -- ---------------------------------------------------------------------------
 create table if not exists public.listings (
   id text primary key default gen_random_uuid()::text,
@@ -55,52 +63,21 @@ create table if not exists public.listings (
   listed_at timestamptz not null default now(),
   status text not null default 'active'
     check (status in ('active', 'loue', 'vendu', 'supprimee')),
+  images jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint listings_images_max check (jsonb_array_length(images) <= 4)
 );
+
+alter table public.listings
+  add column if not exists images jsonb not null default '[]'::jsonb;
 
 create index if not exists listings_public_idx
   on public.listings (status, is_active, type, city);
 create index if not exists listings_owner_idx on public.listings (owner_id);
 
--- Photos d’annonce (max 4). storage_path = chemin bucket ou id mock.
-create table if not exists public.listing_photos (
-  id text primary key default gen_random_uuid()::text,
-  listing_id text not null references public.listings (id) on delete cascade,
-  storage_path text not null,
-  label text,
-  hue double precision,
-  sort_order int not null default 0,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists listing_photos_listing_idx
-  on public.listing_photos (listing_id, sort_order);
-
-create or replace function public.enforce_listing_photo_limit()
-returns trigger
-language plpgsql
-as $$
-declare
-  photo_count int;
-begin
-  select count(*) into photo_count
-  from public.listing_photos
-  where listing_id = new.listing_id;
-  if photo_count >= 4 then
-    raise exception 'Une annonce ne peut pas avoir plus de 4 photos';
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_listing_photo_limit on public.listing_photos;
-create trigger trg_listing_photo_limit
-before insert on public.listing_photos
-for each row execute function public.enforce_listing_photo_limit();
-
 -- ---------------------------------------------------------------------------
--- Demandes + chat
+-- Demandes + chat (`messages` = schéma live, pas chat_messages)
 -- ---------------------------------------------------------------------------
 create table if not exists public.inquiries (
   id text primary key default gen_random_uuid()::text,
@@ -135,7 +112,7 @@ create index if not exists conversations_requester_idx
 create index if not exists conversations_advertiser_idx
   on public.conversations (advertiser_id);
 
-create table if not exists public.chat_messages (
+create table if not exists public.messages (
   id text primary key default gen_random_uuid()::text,
   conversation_id text not null references public.conversations (id) on delete cascade,
   author_id uuid references public.profiles (id) on delete set null,
@@ -145,12 +122,11 @@ create table if not exists public.chat_messages (
   created_at timestamptz not null default now()
 );
 
-create index if not exists chat_messages_conversation_idx
-  on public.chat_messages (conversation_id, created_at);
+create index if not exists messages_conversation_idx
+  on public.messages (conversation_id, created_at);
 
 -- ---------------------------------------------------------------------------
 -- Stories + file de validation + abonnements
--- stories.status pending = story_request. Vue story_requests pour l’admin.
 -- ---------------------------------------------------------------------------
 create table if not exists public.story_subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -232,6 +208,12 @@ security definer
 set search_path = public
 as $$
   select exists (
+    select 1 from public.profiles
+    where id = auth.uid()
+      and story_subscription_until is not null
+      and story_subscription_until > now()
+  )
+  or exists (
     select 1 from public.story_subscriptions
     where profile_id = auth.uid() and ends_at > now()
   );
@@ -247,7 +229,11 @@ as $$
 declare
   phone_value text;
 begin
-  phone_value := coalesce(new.phone, new.raw_user_meta_data->>'phone', '');
+  phone_value := coalesce(
+    nullif(new.phone, ''),
+    nullif(new.raw_user_meta_data->>'phone', ''),
+    'pending-' || new.id::text
+  );
   insert into public.profiles (id, phone, display_name, role)
   values (
     new.id,
@@ -290,10 +276,9 @@ for each row execute function public.touch_updated_at();
 -- ---------------------------------------------------------------------------
 alter table public.profiles enable row level security;
 alter table public.listings enable row level security;
-alter table public.listing_photos enable row level security;
 alter table public.inquiries enable row level security;
 alter table public.conversations enable row level security;
-alter table public.chat_messages enable row level security;
+alter table public.messages enable row level security;
 alter table public.story_subscriptions enable row level security;
 alter table public.stories enable row level security;
 
@@ -333,35 +318,6 @@ create policy "listings_owner_update" on public.listings
 for update using (owner_id = auth.uid() or public.is_admin())
 with check (owner_id = auth.uid() or public.is_admin());
 
--- Photos : visibles si l’annonce est lisible
-drop policy if exists "listing_photos_read" on public.listing_photos;
-create policy "listing_photos_read" on public.listing_photos
-for select using (
-  exists (
-    select 1 from public.listings l
-    where l.id = listing_id
-      and (
-        (l.status = 'active' and l.is_active = true)
-        or l.owner_id = auth.uid()
-        or public.is_admin()
-      )
-  )
-);
-
-drop policy if exists "listing_photos_write" on public.listing_photos;
-create policy "listing_photos_write" on public.listing_photos
-for all using (
-  exists (
-    select 1 from public.listings l
-    where l.id = listing_id and (l.owner_id = auth.uid() or public.is_admin())
-  )
-) with check (
-  exists (
-    select 1 from public.listings l
-    where l.id = listing_id and (l.owner_id = auth.uid() or public.is_admin())
-  )
-);
-
 -- Inquiries : créateur, propriétaire de l’annonce, admin
 drop policy if exists "inquiries_select" on public.inquiries;
 create policy "inquiries_select" on public.inquiries
@@ -395,8 +351,8 @@ for insert with check (
   requester_id = auth.uid() or advertiser_id = auth.uid()
 );
 
-drop policy if exists "chat_messages_select" on public.chat_messages;
-create policy "chat_messages_select" on public.chat_messages
+drop policy if exists "messages_select" on public.messages;
+create policy "messages_select" on public.messages
 for select using (
   public.is_admin()
   or exists (
@@ -406,8 +362,8 @@ for select using (
   )
 );
 
-drop policy if exists "chat_messages_insert" on public.chat_messages;
-create policy "chat_messages_insert" on public.chat_messages
+drop policy if exists "messages_insert" on public.messages;
+create policy "messages_insert" on public.messages
 for insert with check (
   exists (
     select 1 from public.conversations c
@@ -462,12 +418,9 @@ grant update on table public.profiles to authenticated;
 grant select on table public.listings to anon, authenticated;
 grant insert, update on table public.listings to authenticated;
 
-grant select on table public.listing_photos to anon, authenticated;
-grant insert, update, delete on table public.listing_photos to authenticated;
-
 grant select, insert on table public.inquiries to authenticated;
 grant select, insert on table public.conversations to authenticated;
-grant select, insert on table public.chat_messages to authenticated;
+grant select, insert on table public.messages to authenticated;
 
 grant select, insert, update on table public.story_subscriptions to authenticated;
 grant select on table public.stories to anon, authenticated;
@@ -476,12 +429,13 @@ grant select on public.story_requests to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Storage buckets (images annonces max 4 côté table ; stories image/vidéo)
+-- Bucket live : listing-images + story-media
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
   (
-    'listing-photos',
-    'listing-photos',
+    'listing-images',
+    'listing-images',
     true,
     5242880,
     array['image/jpeg', 'image/png', 'image/webp']
@@ -495,24 +449,24 @@ values
   )
 on conflict (id) do nothing;
 
-drop policy if exists "listing_photos_public_read" on storage.objects;
-create policy "listing_photos_public_read"
+drop policy if exists "listing_images_public_read" on storage.objects;
+create policy "listing_images_public_read"
 on storage.objects for select
-using (bucket_id = 'listing-photos');
+using (bucket_id = 'listing-images');
 
-drop policy if exists "listing_photos_owner_write" on storage.objects;
-create policy "listing_photos_owner_write"
+drop policy if exists "listing_images_owner_write" on storage.objects;
+create policy "listing_images_owner_write"
 on storage.objects for insert to authenticated
 with check (
-  bucket_id = 'listing-photos'
+  bucket_id = 'listing-images'
   and split_part(name, '/', 1) = auth.uid()::text
 );
 
-drop policy if exists "listing_photos_owner_delete" on storage.objects;
-create policy "listing_photos_owner_delete"
+drop policy if exists "listing_images_owner_delete" on storage.objects;
+create policy "listing_images_owner_delete"
 on storage.objects for delete to authenticated
 using (
-  bucket_id = 'listing-photos'
+  bucket_id = 'listing-images'
   and split_part(name, '/', 1) = auth.uid()::text
 );
 
@@ -529,10 +483,10 @@ with check (
   and split_part(name, '/', 1) = auth.uid()::text
 );
 
--- Realtime chat (optionnel)
+-- Realtime chat
 do $$
 begin
-  execute 'alter publication supabase_realtime add table public.chat_messages';
+  execute 'alter publication supabase_realtime add table public.messages';
 exception
   when duplicate_object then null;
   when undefined_object then null;

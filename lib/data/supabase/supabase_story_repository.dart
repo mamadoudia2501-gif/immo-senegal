@@ -8,6 +8,7 @@ import '../mappers/supabase_mappers.dart';
 import '../models/app_user.dart';
 import '../models/story.dart';
 import '../repositories/story_repository.dart';
+import 'supabase_schema.dart';
 
 class SupabaseStoryRepository extends StoryRepository {
   SupabaseStoryRepository(this._client) : super.remote();
@@ -52,7 +53,7 @@ class SupabaseStoryRepository extends StoryRepository {
   @override
   Future<void> load() async {
     final rows = await _client
-        .from('stories')
+        .from(SupabaseSchema.stories)
         .select()
         .order('created_at', ascending: false);
     _cache
@@ -79,7 +80,7 @@ class SupabaseStoryRepository extends StoryRepository {
     final createdAt = now();
     unawaited(
       (() async {
-        await _client.from('stories').insert({
+        await _client.from(SupabaseSchema.stories).insert({
           'author_id': _client.auth.currentUser?.id,
           'author_phone': user.phone,
           'media_path': media.id,
@@ -105,7 +106,7 @@ class SupabaseStoryRepository extends StoryRepository {
     required StoryStatus status,
   }) async {
     await _client
-        .from('stories')
+        .from(SupabaseSchema.stories)
         .update({'status': status.name, 'reviewed_at': now().toIso8601String()})
         .eq('id', id);
     await load();

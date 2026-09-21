@@ -24,6 +24,9 @@ class AuthRepository extends ChangeNotifier {
 
   bool get isLoggedIn => currentUser != null;
   bool get isAdmin => currentUser?.isAdmin ?? false;
+  bool get isRemote => false;
+  bool get pendingUsesEmailFallback => false;
+  bool get showDemoOtp => !isRemote && !isPendingAdmin;
   bool get isPendingAdmin {
     final phone = pendingPhone;
     if (phone == null) return false;

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../mappers/supabase_mappers.dart';
 import '../models/inquiry.dart';
 import '../repositories/inquiry_repository.dart';
+import 'supabase_schema.dart';
 
 class SupabaseInquiryRepository extends InquiryRepository {
   SupabaseInquiryRepository(this._client) : super.remote();
@@ -16,7 +17,7 @@ class SupabaseInquiryRepository extends InquiryRepository {
   @override
   Future<void> load() async {
     final rows = await _client
-        .from('inquiries')
+        .from(SupabaseSchema.inquiries)
         .select()
         .order('created_at', ascending: false);
     _cache
@@ -36,7 +37,7 @@ class SupabaseInquiryRepository extends InquiryRepository {
     String? listingId,
   }) async {
     final inserted = await _client
-        .from('inquiries')
+        .from(SupabaseSchema.inquiries)
         .insert({
           'listing_id': listingId,
           'requester_id': _client.auth.currentUser?.id,

@@ -5,12 +5,29 @@ import '../../core/utils/phone.dart';
 import '../mappers/supabase_mappers.dart';
 import '../models/app_user.dart';
 import '../repositories/auth_repository.dart';
+import 'supabase_schema.dart';
 
+/// Auth téléphone (OTP SMS) si le provider Phone est actif.
+/// Sinon e-mail de secours `{8chiffres}@immo-senegal.test` + téléphone écrit
+/// sur `profiles` après verification.
 class SupabaseAuthRepository extends AuthRepository {
   SupabaseAuthRepository(this._client) : super.remote();
 
   final SupabaseClient _client;
   final Map<String, AppUser> _cache = {};
+  var _otpEmailFallback = false;
+
+  @override
+  bool get isRemote => true;
+
+  @override
+  bool get pendingUsesEmailFallback => _otpEmailFallback;
+
+  String get _fallbackEmail {
+    final phone = pendingPhone;
+    if (phone == null) return '';
+    return '${senegalLocalDigits(phone)}@immo-senegal.test';
+  }
 
   @override
   AppUser? byPhone(String phone) => _cache[senegalLocalDigits(phone)];
@@ -25,7 +42,10 @@ class SupabaseAuthRepository extends AuthRepository {
     if (session != null) {
       currentUser = await _fetchProfile(session.user.id);
     }
-    final rows = await _client.from('profiles').select().neq('role', 'admin');
+    final rows = await _client
+        .from(SupabaseSchema.profiles)
+        .select()
+        .neq('role', 'admin');
     _cache
       ..clear()
       ..addAll({
@@ -43,11 +63,22 @@ class SupabaseAuthRepository extends AuthRepository {
   Future<void> requestCode({required String phone, String? name}) async {
     pendingPhone = formatSenegalPhone(phone);
     pendingName = (name ?? '').trim().isEmpty ? null : name!.trim();
+    _otpEmailFallback = false;
+    final meta = <String, dynamic>{
+      if (pendingName != null) 'display_name': pendingName,
+      'phone': pendingPhone,
+    };
     final e164 = pendingPhone!.replaceAll(' ', '');
-    await _client.auth.signInWithOtp(
-      phone: e164,
-      data: {if (pendingName != null) 'display_name': pendingName},
-    );
+    try {
+      await _client.auth.signInWithOtp(phone: e164, data: meta);
+    } catch (_) {
+      _otpEmailFallback = true;
+      await _client.auth.signInWithOtp(
+        email: _fallbackEmail,
+        shouldCreateUser: true,
+        data: meta,
+      );
+    }
     notifyListeners();
   }
 
@@ -55,17 +86,36 @@ class SupabaseAuthRepository extends AuthRepository {
   Future<bool> verifyDemoCode(String code) async {
     final phone = pendingPhone;
     if (phone == null) return false;
+    final token = code.replaceAll(RegExp(r'\D'), '');
     try {
-      await _client.auth.verifyOTP(
-        phone: phone.replaceAll(' ', ''),
-        token: code.replaceAll(RegExp(r'\D'), ''),
-        type: OtpType.sms,
-      );
+      if (_otpEmailFallback) {
+        await _client.auth.verifyOTP(
+          email: _fallbackEmail,
+          token: token,
+          type: OtpType.email,
+        );
+      } else {
+        try {
+          await _client.auth.verifyOTP(
+            phone: phone.replaceAll(' ', ''),
+            token: token,
+            type: OtpType.sms,
+          );
+        } catch (_) {
+          await _client.auth.verifyOTP(
+            email: _fallbackEmail,
+            token: token,
+            type: OtpType.email,
+          );
+        }
+      }
       final uid = _client.auth.currentUser?.id;
       if (uid == null) return false;
+      await _syncPhoneOnProfile(uid);
       currentUser = await _fetchProfile(uid);
       pendingPhone = null;
       pendingName = null;
+      _otpEmailFallback = false;
       notifyListeners();
       return currentUser != null;
     } catch (_) {
@@ -84,7 +134,7 @@ class SupabaseAuthRepository extends AuthRepository {
     if (uid == null) return ListingSlot.notAuthenticated;
     if (currentUser!.isAdmin) {
       await _client
-          .from('profiles')
+          .from(SupabaseSchema.profiles)
           .update({'published_count': currentUser!.publishedCount + 1})
           .eq('id', uid);
       await load();
@@ -92,7 +142,7 @@ class SupabaseAuthRepository extends AuthRepository {
     }
     if (currentUser!.freeListingsRemaining > 0) {
       await _client
-          .from('profiles')
+          .from(SupabaseSchema.profiles)
           .update({
             'free_listings_remaining': currentUser!.freeListingsRemaining - 1,
             'published_count': currentUser!.publishedCount + 1,
@@ -102,7 +152,7 @@ class SupabaseAuthRepository extends AuthRepository {
       return ListingSlot.free;
     }
     await _client
-        .from('profiles')
+        .from(SupabaseSchema.profiles)
         .update({
           'published_count': currentUser!.publishedCount + 1,
           'paid_count': currentUser!.paidCount + 1,
@@ -122,16 +172,14 @@ class SupabaseAuthRepository extends AuthRepository {
   }) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null || currentUser == null || currentUser!.isAdmin) return;
-    await _client
-        .from('profiles')
-        .update({
-          'display_name': ?displayName,
-          'whatsapp': ?whatsapp,
-          'other_contact': ?otherContact,
-          'address': ?address,
-          'city': ?city,
-        })
-        .eq('id', uid);
+    final payload = <String, dynamic>{};
+    if (displayName != null) payload['display_name'] = displayName;
+    if (whatsapp != null) payload['whatsapp'] = whatsapp;
+    if (otherContact != null) payload['other_contact'] = otherContact;
+    if (address != null) payload['address'] = address;
+    if (city != null) payload['city'] = city;
+    if (payload.isEmpty) return;
+    await _client.from(SupabaseSchema.profiles).update(payload).eq('id', uid);
     await load();
   }
 
@@ -149,12 +197,19 @@ class SupabaseAuthRepository extends AuthRepository {
     final ends = start.add(
       const Duration(days: AppConstants.storySubscriptionDays),
     );
-    await _client.from('story_subscriptions').upsert({
-      'profile_id': uid,
-      'starts_at': start.toIso8601String(),
-      'ends_at': ends.toIso8601String(),
-      'amount_fcfa': AppConstants.storySubscriptionFcfa,
-    });
+    try {
+      await _client
+          .from(SupabaseSchema.profiles)
+          .update({'story_subscription_until': ends.toIso8601String()})
+          .eq('id', uid);
+    } catch (_) {
+      await _client.from(SupabaseSchema.storySubscriptions).upsert({
+        'profile_id': uid,
+        'starts_at': start.toIso8601String(),
+        'ends_at': ends.toIso8601String(),
+        'amount_fcfa': AppConstants.storySubscriptionFcfa,
+      });
+    }
     await load();
     return true;
   }
@@ -165,24 +220,38 @@ class SupabaseAuthRepository extends AuthRepository {
     currentUser = null;
     pendingPhone = null;
     pendingName = null;
+    _otpEmailFallback = false;
     notifyListeners();
+  }
+
+  Future<void> _syncPhoneOnProfile(String uid) async {
+    final payload = <String, dynamic>{
+      if (pendingPhone != null) 'phone': pendingPhone,
+      if (pendingName != null) 'display_name': pendingName,
+    };
+    if (payload.isEmpty) return;
+    await _client.from(SupabaseSchema.profiles).update(payload).eq('id', uid);
   }
 
   Future<AppUser?> _fetchProfile(String uid) async {
     final row = await _client
-        .from('profiles')
+        .from(SupabaseSchema.profiles)
         .select()
         .eq('id', uid)
         .maybeSingle();
     if (row == null) return null;
     DateTime? until;
-    final sub = await _client
-        .from('story_subscriptions')
-        .select()
-        .eq('profile_id', uid)
-        .maybeSingle();
-    if (sub != null && sub['ends_at'] is String) {
-      until = DateTime.tryParse(sub['ends_at'] as String);
+    try {
+      final sub = await _client
+          .from(SupabaseSchema.storySubscriptions)
+          .select()
+          .eq('profile_id', uid)
+          .maybeSingle();
+      if (sub != null && sub['ends_at'] is String) {
+        until = DateTime.tryParse(sub['ends_at'] as String);
+      }
+    } catch (_) {
+      until = null;
     }
     return profileFromRow(
       Map<String, dynamic>.from(row),

@@ -47,6 +47,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final remote = context.watch<AuthRepository>().isRemote;
     return Scaffold(
       appBar: AppBar(title: const Text('Connexion')),
       body: Form(
@@ -60,7 +61,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Un code WhatsApp de démo peut s’afficher pour tester un compte annonceur. Aucun SMS réel n’est envoyé.',
+              remote
+                  ? 'Un code vous sera envoyé par SMS. Si le téléphone n’est pas activé sur le projet, un code e-mail de secours est utilisé. Le numéro reste enregistré sur le profil.'
+                  : 'Un code WhatsApp de démo peut s’afficher pour tester un compte annonceur. Aucun SMS réel n’est envoyé.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.muted,
               ),
@@ -96,7 +99,13 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             FilledButton(
               key: const Key('auth-continue'),
               onPressed: _sending ? null : _continue,
-              child: Text(_sending ? 'Envoi…' : 'Recevoir le code WhatsApp'),
+              child: Text(
+                _sending
+                    ? 'Envoi…'
+                    : (remote
+                          ? 'Recevoir le code'
+                          : 'Recevoir le code WhatsApp'),
+              ),
             ),
           ],
         ),

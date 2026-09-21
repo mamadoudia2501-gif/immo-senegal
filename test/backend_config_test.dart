@@ -1,11 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immo_senegal/core/config/app_config.dart';
+import 'package:immo_senegal/core/utils/ids.dart';
+import 'package:immo_senegal/data/backend/app_backend.dart';
 import 'package:immo_senegal/data/mappers/supabase_mappers.dart';
 import 'package:immo_senegal/data/models/app_user.dart';
 import 'package:immo_senegal/data/models/listing.dart';
 import 'package:immo_senegal/data/models/story.dart';
+import 'package:immo_senegal/data/supabase/supabase_schema.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:immo_senegal/data/backend/app_backend.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +19,14 @@ void main() {
     expect(AppConfig.useSupabase, isFalse);
     expect(AppConfig.kind, BackendKind.local);
     expect(AppConfig.backendLabel, contains('local'));
+  });
+
+  test('l’URL test n’est pas une valeur par défaut compilée', () {
+    expect(AppConfig.supabaseUrl, isNot(SupabaseSchema.testProjectUrl));
+    expect(SupabaseSchema.messages, 'messages');
+    expect(SupabaseSchema.listingImagesBucket, 'listing-images');
+    expect(SupabaseSchema.storyMediaBucket, 'story-media');
+    expect(SupabaseSchema.listingStatusActive, 'active');
   });
 
   test('factory ouvre les dépôts mock sans Supabase', () async {
@@ -78,6 +88,71 @@ void main() {
     expect(listing.isPublic, isFalse);
     expect(listing.photos, hasLength(1));
     expect(listingToRow(listing, ownerId: 'owner-1')['status'], 'loue');
+    expect(listingToRow(listing, ownerId: 'owner-1')['images'], isA<List>());
+  });
+
+  test('photos depuis jsonb images (schéma live)', () {
+    final listing = listingFromRow({
+      'id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      'title': 'Villa',
+      'city': 'Saly',
+      'neighborhood': 'Centre',
+      'type': 'vente',
+      'kind': 'villa',
+      'price_fcfa': 85000000,
+      'description': 'Vue mer',
+      'status': 'active',
+      'images': [
+        {
+          'storage_path': 'cover',
+          'label': 'Façade',
+          'hue': 12,
+          'sort_order': 1,
+        },
+        {'id': 'salon', 'label': 'Salon', 'hue': 40, 'sort_order': 0},
+      ],
+    });
+    expect(listing.lifecycle, ListingLifecycle.actif);
+    expect(listing.isPublic, isTrue);
+    expect(listing.photos, hasLength(2));
+    expect(listing.photos.first.label, 'Salon');
+    expect(listing.photos.first.id, 'salon');
+  });
+
+  test('messages : body/content/text + nid messages', () {
+    final fromBody = chatMessageFromRow({
+      'id': 'm1',
+      'author_phone': '+221 77 111 22 33',
+      'body': 'Bonjour',
+      'created_at': '2026-09-21T10:00:00Z',
+    });
+    expect(fromBody.body, 'Bonjour');
+    final fromContent = chatMessageFromRow({
+      'id': 'm2',
+      'sender_phone': '+221 77 111 22 33',
+      'content': 'Disponible ?',
+      'created_at': '2026-09-21T10:01:00Z',
+    });
+    expect(fromContent.body, 'Disponible ?');
+    expect(fromContent.authorPhone, '+221 77 111 22 33');
+
+    final nested = nestedMessagesFromConversationRow({
+      'id': 'c1',
+      'inquiry_id': 'i1',
+      'requester_phone': '+221 77 111 22 33',
+      'requester_name': 'Awa',
+      'messages': [
+        {'id': 'm2', 'body': 'Suite', 'created_at': '2026-09-21T10:02:00Z'},
+        {'id': 'm1', 'text': 'Début', 'created_at': '2026-09-21T10:00:00Z'},
+      ],
+    });
+    expect(nested.map((m) => m.body).toList(), ['Début', 'Suite']);
+  });
+
+  test('UUID v4 généré pour les PK distantes', () {
+    final id = newUuid();
+    expect(looksLikeUuid(id), isTrue);
+    expect(looksLikeUuid('u123'), isFalse);
   });
 
   test('mapping story pending → file de validation', () {

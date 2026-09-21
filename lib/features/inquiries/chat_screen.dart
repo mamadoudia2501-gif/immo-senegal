@@ -27,6 +27,15 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ConversationRepository>().syncRemote();
+    });
+  }
+
+  @override
   void dispose() {
     _inputController.dispose();
     _scrollController.dispose();

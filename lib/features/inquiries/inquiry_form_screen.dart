@@ -100,6 +100,7 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
     final listing = widget.listingId == null
         ? null
         : context.read<ListingRepository>().byId(widget.listingId!);
+    final remote = context.watch<AuthRepository>().isRemote;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Faire une demande')),
@@ -194,7 +195,9 @@ class _InquiryFormScreenState extends State<InquiryFormScreen> {
                   prefixIcon: const Icon(Icons.phone_outlined),
                   helperText: _lockedIdentity
                       ? 'Numéro de votre compte — requis pour continuer le chat.'
-                      : 'Un code WhatsApp mock confirmera ce numéro pour le chat.',
+                      : (remote
+                            ? 'Un code confirmera ce numéro pour ouvrir le chat.'
+                            : 'Un code WhatsApp mock confirmera ce numéro pour le chat.'),
                 ),
                 validator: (value) {
                   if (!isValidSenegalPhone(value ?? '')) {

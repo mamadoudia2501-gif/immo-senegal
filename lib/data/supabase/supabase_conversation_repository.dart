@@ -2,18 +2,35 @@ import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/ids.dart';
 import '../../core/utils/phone.dart';
 import '../mappers/supabase_mappers.dart';
 import '../models/conversation.dart';
 import '../models/inquiry.dart';
 import '../models/listing.dart';
 import '../repositories/conversation_repository.dart';
+import 'supabase_schema.dart';
+
+class _PendingConversation {
+  const _PendingConversation({
+    required this.conversation,
+    required this.inquiry,
+    this.listing,
+    this.advertiserPhone,
+  });
+
+  final Conversation conversation;
+  final Inquiry inquiry;
+  final Listing? listing;
+  final String? advertiserPhone;
+}
 
 class SupabaseConversationRepository extends ConversationRepository {
   SupabaseConversationRepository(this._client) : super.remote();
 
   final SupabaseClient _client;
   final List<Conversation> _cache = [];
+  _PendingConversation? _pending;
 
   @override
   List<Conversation> get conversations => List.unmodifiable(_cache);
@@ -21,8 +38,8 @@ class SupabaseConversationRepository extends ConversationRepository {
   @override
   Future<void> load() async {
     final rows = await _client
-        .from('conversations')
-        .select('*, chat_messages(*)')
+        .from(SupabaseSchema.conversations)
+        .select('*, ${SupabaseSchema.messages}(*)')
         .order('created_at', ascending: false);
     _cache
       ..clear()
@@ -32,6 +49,11 @@ class SupabaseConversationRepository extends ConversationRepository {
       ]);
     loaded = true;
     notifyListeners();
+  }
+
+  @override
+  Future<void> syncRemote() async {
+    await _flushPending();
   }
 
   @override
@@ -72,7 +94,7 @@ class SupabaseConversationRepository extends ConversationRepository {
     final existing = byInquiry(inquiry.id);
     if (existing != null) return existing;
     final createdAt = now();
-    final conversationId = 'c-${inquiry.id}';
+    final conversationId = newUuid();
     final optimistic = Conversation(
       id: conversationId,
       inquiryId: inquiry.id,
@@ -84,7 +106,7 @@ class SupabaseConversationRepository extends ConversationRepository {
       createdAt: createdAt,
       messages: [
         ChatMessage(
-          id: 'm-${inquiry.id}-open',
+          id: newUuid(),
           authorPhone: inquiry.phone,
           body: inquiry.message,
           createdAt: createdAt,
@@ -110,22 +132,66 @@ class SupabaseConversationRepository extends ConversationRepository {
     Listing? listing,
     String? advertiserPhone,
   }) async {
-    await _client.from('conversations').insert({
-      'id': conversation.id,
-      'inquiry_id': inquiry.id,
-      'listing_id': listing?.id ?? inquiry.listingId,
-      'listing_title': listing?.title,
-      'requester_id': _client.auth.currentUser?.id,
-      'requester_phone': inquiry.phone,
-      'requester_name': inquiry.name,
-      'advertiser_phone': advertiserPhone,
+    if (_client.auth.currentUser == null) {
+      _pending = _PendingConversation(
+        conversation: conversation,
+        inquiry: inquiry,
+        listing: listing,
+        advertiserPhone: advertiserPhone,
+      );
+      return;
+    }
+    await _flushPending(
+      fallback: _PendingConversation(
+        conversation: conversation,
+        inquiry: inquiry,
+        listing: listing,
+        advertiserPhone: advertiserPhone,
+      ),
+    );
+  }
+
+  Future<void> _flushPending({_PendingConversation? fallback}) async {
+    final pending = _pending ?? fallback;
+    if (pending == null) return;
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) {
+      _pending = pending;
+      return;
+    }
+    _pending = null;
+    final listingId = pending.listing?.id ?? pending.inquiry.listingId;
+    String? advertiserId;
+    if (listingId != null) {
+      try {
+        final owned = await _client
+            .from(SupabaseSchema.listings)
+            .select('owner_id')
+            .eq('id', listingId)
+            .maybeSingle();
+        advertiserId = owned?['owner_id'] as String?;
+      } catch (_) {
+        advertiserId = null;
+      }
+    }
+    await _client.from(SupabaseSchema.conversations).insert({
+      'id': pending.conversation.id,
+      'inquiry_id': pending.inquiry.id,
+      'listing_id': listingId,
+      'listing_title': pending.listing?.title,
+      'requester_id': uid,
+      'advertiser_id': advertiserId,
+      'requester_phone': pending.inquiry.phone,
+      'requester_name': pending.inquiry.name,
+      'advertiser_phone': pending.advertiserPhone,
     });
-    await _client.from('chat_messages').insert({
-      'id': conversation.messages.first.id,
-      'conversation_id': conversation.id,
-      'author_id': _client.auth.currentUser?.id,
-      'author_phone': inquiry.phone,
-      'body': inquiry.message,
+    final first = pending.conversation.messages.first;
+    await _client.from(SupabaseSchema.messages).insert({
+      'id': first.id,
+      'conversation_id': pending.conversation.id,
+      'author_id': uid,
+      'author_phone': pending.inquiry.phone,
+      'body': pending.inquiry.message,
     });
     await load();
   }
@@ -145,7 +211,7 @@ class SupabaseConversationRepository extends ConversationRepository {
     }
     final createdAt = now();
     final message = ChatMessage(
-      id: 'pending-$createdAt',
+      id: newUuid(),
       authorPhone: authorPhone,
       body: text,
       createdAt: createdAt,
@@ -158,29 +224,25 @@ class SupabaseConversationRepository extends ConversationRepository {
       notifyListeners();
     }
     unawaited(
-      _client
-          .from('chat_messages')
-          .insert({
-            'conversation_id': conversationId,
-            'author_id': _client.auth.currentUser?.id,
-            'author_phone': authorPhone,
-            'body': text,
-          })
-          .then((_) => load()),
+      (() async {
+        await _flushPending();
+        await _client.from(SupabaseSchema.messages).insert({
+          'id': message.id,
+          'conversation_id': conversationId,
+          'author_id': _client.auth.currentUser?.id,
+          'author_phone': authorPhone,
+          'body': text,
+        });
+        await load();
+      })(),
     );
     return message;
   }
 
   Conversation _fromNested(Map<String, dynamic> row) {
-    final raw = row['chat_messages'];
-    final messages = <ChatMessage>[];
-    if (raw is List) {
-      final items = [
-        for (final item in raw)
-          if (item is Map) chatMessageFromRow(Map<String, dynamic>.from(item)),
-      ]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      messages.addAll(items);
-    }
-    return conversationFromRow(row, messages: messages);
+    return conversationFromRow(
+      row,
+      messages: nestedMessagesFromConversationRow(row),
+    );
   }
 }

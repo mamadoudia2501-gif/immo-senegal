@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../data/repositories/conversation_repository.dart';
 
 class WhatsAppCodeScreen extends StatefulWidget {
   const WhatsAppCodeScreen({super.key, this.nextPath});
@@ -42,6 +43,8 @@ class _WhatsAppCodeScreenState extends State<WhatsAppCodeScreen> {
       });
       return;
     }
+    await context.read<ConversationRepository>().syncRemote();
+    if (!mounted) return;
     final next = widget.nextPath;
     if (next != null && next.startsWith('/')) {
       context.go(next);
@@ -54,18 +57,27 @@ class _WhatsAppCodeScreenState extends State<WhatsAppCodeScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthRepository>();
     final phone = auth.pendingPhone;
-    final hideDemoCode = auth.isPendingAdmin;
+    final hideDemoCode = !auth.showDemoOtp;
+    final remote = auth.isRemote;
+    final emailFallback = auth.pendingUsesEmailFallback;
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Code WhatsApp')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
-          Text('Confirmation mock', style: theme.textTheme.headlineSmall),
+          Text(
+            remote ? 'Confirmation' : 'Confirmation mock',
+            style: theme.textTheme.headlineSmall,
+          ),
           const SizedBox(height: 8),
           Text(
             phone == null
                 ? 'Saisissez le code reçu pour valider le numéro.'
+                : remote
+                ? (emailFallback
+                      ? 'Le SMS n’est pas disponible. Saisissez le code e-mail de secours pour $phone.'
+                      : 'Saisissez le code reçu par SMS pour $phone.')
                 : hideDemoCode
                 ? 'Un message WhatsApp a été simulé. Saisissez le code reçu. Aucun envoi réel.'
                 : 'Un message WhatsApp a été simulé vers $phone. Aucun envoi réel.',
@@ -115,14 +127,14 @@ class _WhatsAppCodeScreenState extends State<WhatsAppCodeScreen> {
                 borderRadius: BorderRadius.circular(AppRadii.lg),
                 border: Border.all(color: const Color(0xFFE4D9C8)),
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.lock_outline_rounded,
                     color: AppColors.primaryDark,
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     'Saisissez le code reçu',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -130,11 +142,13 @@ class _WhatsAppCodeScreenState extends State<WhatsAppCodeScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Pour ce compte, le code n’est pas affiché dans l’application.',
+                    remote
+                        ? 'Le code de démo n’est pas affiché en mode Supabase.'
+                        : 'Pour ce compte, le code n’est pas affiché dans l’application.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.primaryDark),
+                    style: const TextStyle(color: AppColors.primaryDark),
                   ),
                 ],
               ),

@@ -1,10 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/ids.dart';
 import '../../core/utils/phone.dart';
-import '../mock/sample_data.dart';
+import '../mappers/supabase_mappers.dart';
 import '../models/listing.dart';
 import '../repositories/listing_repository.dart';
-import '../mappers/supabase_mappers.dart';
+import 'supabase_schema.dart';
 
 class SupabaseListingRepository extends ListingRepository {
   SupabaseListingRepository(this._client) : super.remote();
@@ -20,21 +21,25 @@ class SupabaseListingRepository extends ListingRepository {
       if (!listing.isDeleted) listing,
   ];
 
+  /// Catalogue distant uniquement (pas de `sampleListings` mélangés).
   @override
   List<Listing> all({bool includeInactive = false}) {
-    final extras = includeInactive
-        ? userListings
-        : _cache.where((listing) => listing.isPublic);
-    return [...extras, ...sampleListings];
+    if (includeInactive) {
+      return [
+        for (final listing in _cache)
+          if (!listing.isDeleted) listing,
+      ];
+    }
+    return [
+      for (final listing in _cache)
+        if (listing.isPublic) listing,
+    ];
   }
 
   @override
   Listing? byId(String id) {
     for (final listing in _cache) {
       if (listing.id == id && !listing.isDeleted) return listing;
-    }
-    for (final listing in sampleListings) {
-      if (listing.id == id) return listing;
     }
     return null;
   }
@@ -54,16 +59,35 @@ class SupabaseListingRepository extends ListingRepository {
 
   @override
   Future<void> load() async {
-    final rows = await _client
-        .from('listings')
-        .select('*, listing_photos(*)')
-        .neq('status', 'supprimee');
+    final byId = <String, Listing>{};
+
+    void absorb(dynamic rows) {
+      if (rows is! List) return;
+      for (final row in rows) {
+        if (row is! Map) continue;
+        final listing = listingFromRow(Map<String, dynamic>.from(row));
+        byId[listing.id] = listing;
+      }
+    }
+
+    final publicRows = await _client
+        .from(SupabaseSchema.listings)
+        .select()
+        .eq('status', SupabaseSchema.listingStatusActive);
+    absorb(publicRows);
+
+    final ownerId = _uid;
+    if (ownerId != null) {
+      final ownerRows = await _client
+          .from(SupabaseSchema.listings)
+          .select()
+          .eq('owner_id', ownerId);
+      absorb(ownerRows);
+    }
+
     _cache
       ..clear()
-      ..addAll([
-        for (final row in rows as List)
-          if (row is Map) listingFromRow(Map<String, dynamic>.from(row)),
-      ]);
+      ..addAll(byId.values);
     loaded = true;
     notifyListeners();
   }
@@ -72,27 +96,52 @@ class SupabaseListingRepository extends ListingRepository {
   Future<Listing> add(Listing listing) async {
     final ownerId = _uid;
     if (ownerId == null) return listing;
-    await _client
-        .from('listings')
-        .insert(listingToRow(listing, ownerId: ownerId));
-    var order = 0;
-    for (final photo in listing.photos) {
-      await _client.from('listing_photos').insert({
-        'listing_id': listing.id,
-        'storage_path': photo.id,
-        'label': photo.label,
-        'hue': photo.hue,
-        'sort_order': order,
-      });
-      order += 1;
-    }
+    final payload = listingToRow(
+      listing,
+      ownerId: ownerId,
+      includeId: looksLikeUuid(listing.id),
+    );
+    final inserted = await _insertListing(payload);
+    final created = listingFromRow(inserted);
     await load();
-    return byId(listing.id) ?? listing;
+    return byId(created.id) ?? created;
+  }
+
+  Future<Map<String, dynamic>> _insertListing(
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      return Map<String, dynamic>.from(
+        await _client
+            .from(SupabaseSchema.listings)
+            .insert(payload)
+            .select()
+            .single(),
+      );
+    } on PostgrestException {
+      final core = Map<String, dynamic>.from(payload)
+        ..remove('images')
+        ..remove('placeholder_hue')
+        ..remove('was_paid')
+        ..remove('featured')
+        ..remove('villa_style')
+        ..remove('broker_id');
+      return Map<String, dynamic>.from(
+        await _client
+            .from(SupabaseSchema.listings)
+            .insert(core)
+            .select()
+            .single(),
+      );
+    }
   }
 
   @override
   Future<void> setActive({required String id, required bool isActive}) async {
-    await _client.from('listings').update({'is_active': isActive}).eq('id', id);
+    await _client
+        .from(SupabaseSchema.listings)
+        .update({'is_active': isActive})
+        .eq('id', id);
     await load();
   }
 
@@ -105,7 +154,7 @@ class SupabaseListingRepository extends ListingRepository {
     if (current == null || current.isDeleted) return false;
     if (!lifecycle.allowedFor(current.type)) return false;
     await _client
-        .from('listings')
+        .from(SupabaseSchema.listings)
         .update({'status': listingStatusToSql(lifecycle)})
         .eq('id', id);
     await load();
