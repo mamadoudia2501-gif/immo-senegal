@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immo_senegal/core/constants/app_constants.dart';
 import 'package:immo_senegal/data/models/app_user.dart';
+import 'package:immo_senegal/data/models/listing.dart';
 import 'package:immo_senegal/data/repositories/auth_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,6 +21,7 @@ void main() {
     final auth = await repo();
     await auth.requestCode(phone: '771112233', name: 'Awa');
     expect(await auth.verifyDemoCode('000000'), isFalse);
+    expect(await auth.verifyDemoCode(AppConstants.whatsappAdminCode), isFalse);
     expect(await auth.verifyDemoCode(AppConstants.whatsappDemoCode), isTrue);
     expect(auth.currentUser?.role, UserRole.advertiser);
     expect(auth.currentUser?.freeListingsRemaining, 4);
@@ -38,12 +40,19 @@ void main() {
   test('admin : publication gratuite illimitée', () async {
     final auth = await repo();
     await auth.requestCode(phone: AppConstants.adminPhoneLocal);
-    expect(await auth.verifyDemoCode(AppConstants.whatsappDemoCode), isTrue);
+    expect(await auth.verifyDemoCode(AppConstants.whatsappDemoCode), isFalse);
+    expect(await auth.verifyDemoCode(AppConstants.whatsappAdminCode), isTrue);
     expect(auth.isAdmin, isTrue);
     for (var i = 0; i < 6; i++) {
       expect(await auth.reserveListingSlot(), ListingSlot.adminUnlimited);
     }
     expect(auth.previewListingSlot(), ListingSlot.adminUnlimited);
     expect(auth.currentUser?.paidCount, 0);
+  });
+
+  test('photos : 1 minimum, 4 maximum', () {
+    expect(AppConstants.minListingPhotos, 1);
+    expect(AppConstants.maxListingPhotos, 4);
+    expect(ListingPhoto.catalog.length, greaterThanOrEqualTo(4));
   });
 }

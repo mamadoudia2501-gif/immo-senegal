@@ -9,6 +9,8 @@ class InquiryRepository extends ChangeNotifier {
   InquiryRepository({SharedPreferences? preferences})
     : _preferences = preferences;
 
+  InquiryRepository.remote() : _preferences = null;
+
   static const _storageKey = 'immo_senegal_inquiries';
 
   SharedPreferences? _preferences;

@@ -4,12 +4,17 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/launchers.dart';
+import '../../core/utils/phone.dart';
 import '../../data/models/listing.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/broker_repository.dart';
+import '../../data/repositories/conversation_repository.dart';
 import '../../data/repositories/listing_repository.dart';
+import '../../data/repositories/story_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/listing_gallery.dart';
 import '../../shared/widgets/listing_photo_placeholder.dart';
+import 'listing_lifecycle_actions.dart';
 
 class ListingDetailScreen extends StatelessWidget {
   const ListingDetailScreen({super.key, required this.listingId});
@@ -18,8 +23,22 @@ class ListingDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listing = context.read<ListingRepository>().byId(listingId);
+    final listings = context.watch<ListingRepository>();
+    final listing = listings.byId(listingId);
+    final auth = context.watch<AuthRepository>();
+    final conversations = context.watch<ConversationRepository>();
     if (listing == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Bien introuvable')),
+        body: const Center(child: Text('Cette annonce n’est plus disponible.')),
+      );
+    }
+
+    final canManage = listings.canManage(
+      listing: listing,
+      user: auth.currentUser,
+    );
+    if (!listing.isPublic && !canManage) {
       return Scaffold(
         appBar: AppBar(title: const Text('Bien introuvable')),
         body: const Center(child: Text('Cette annonce n’est plus disponible.')),
@@ -30,6 +49,12 @@ class ListingDetailScreen extends StatelessWidget {
         ? null
         : context.read<BrokerRepository>().byId(listing.brokerId!);
     final theme = Theme.of(context);
+    final existingConversation = auth.currentUser == null
+        ? null
+        : conversations.forListing(
+            listingId: listing.id,
+            phone: auth.currentUser!.phone,
+          );
 
     return Scaffold(
       body: CustomScrollView(
@@ -51,7 +76,14 @@ class ListingDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TypeBadge(type: listing.type),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      TypeBadge(type: listing.type),
+                      if (canManage) ListingStatusBadge(listing: listing),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   Text(listing.title, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 8),
@@ -119,13 +151,36 @@ class ListingDetailScreen extends StatelessWidget {
                       color: AppColors.ink,
                     ),
                   ),
-                  if (listing.publisherPhone != null) ...[
+                  if (canManage) ...[
+                    const SizedBox(height: 28),
+                    ListingLifecycleActions(listing: listing),
+                  ],
+                  if (listing.publisherPhone != null &&
+                      !isReservedAdminPhone(listing.publisherPhone!)) ...[
                     const SizedBox(height: 28),
                     Text('Annonceur', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 8),
-                    Text(
-                      listing.publisherPhone!,
-                      style: theme.textTheme.titleMedium,
+                    Builder(
+                      builder: (context) {
+                        final profile = resolveAdvertiserProfile(
+                          phone: listing.publisherPhone!,
+                          registered: context.read<AuthRepository>().byPhone(
+                            listing.publisherPhone!,
+                          ),
+                        );
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          onTap: () => context.push(
+                            '/annonceur/${senegalLocalDigits(listing.publisherPhone!)}',
+                          ),
+                          title: Text(
+                            profile?.displayName ?? 'Annonceur',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          subtitle: const Text('Voir le profil public'),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                        );
+                      },
                     ),
                     if (listing.wasPaid)
                       const Padding(
@@ -243,14 +298,24 @@ class ListingDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  FilledButton.icon(
-                    key: const Key('listing-inquiry-cta'),
-                    onPressed: () => context.push(
-                      '/demande/nouvelle?listingId=${listing.id}',
+                  if (existingConversation != null)
+                    FilledButton.icon(
+                      key: const Key('listing-continue-chat'),
+                      onPressed: () => context.push(
+                        '/discussion/${existingConversation.id}',
+                      ),
+                      icon: const Icon(Icons.forum_rounded),
+                      label: const Text('Continuer la discussion'),
+                    )
+                  else if (listing.isPublic)
+                    FilledButton.icon(
+                      key: const Key('listing-inquiry-cta'),
+                      onPressed: () => context.push(
+                        '/demande/nouvelle?listingId=${listing.id}',
+                      ),
+                      icon: const Icon(Icons.edit_note_rounded),
+                      label: const Text('Faire une demande'),
                     ),
-                    icon: const Icon(Icons.edit_note_rounded),
-                    label: const Text('Faire une demande'),
-                  ),
                 ],
               ),
             ),

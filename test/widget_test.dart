@@ -96,9 +96,17 @@ void main() {
     await tester.tap(find.byKey(const Key('inquiry-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Demandes'), findsWidgets);
-    expect(find.text('Awa Ndiaye'), findsOneWidget);
+    expect(find.text(AppConstants.whatsappDemoCode), findsWidgets);
+    await tester.enterText(
+      find.byKey(const Key('auth-code')),
+      AppConstants.whatsappDemoCode,
+    );
+    await tester.tap(find.byKey(const Key('auth-verify')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('chat-input')), findsOneWidget);
     expect(find.textContaining('Bargny'), findsWidgets);
+    expect(find.textContaining('Terrain viabilisé'), findsWidgets);
   });
 
   testWidgets('annuaire des courtiers', (tester) async {
@@ -155,5 +163,95 @@ void main() {
       find.textContaining('${AppConstants.freeListingQuota}'),
       findsWidgets,
     );
+  });
+
+  testWidgets('OTP admin jamais affiché, code 12345693 accepté', (
+    tester,
+  ) async {
+    final repos = await _repos();
+    await _pumpApp(
+      tester,
+      auth: repos.$1,
+      listings: repos.$2,
+      inquiries: repos.$3,
+    );
+
+    await tester.tap(find.byKey(const Key('publish-cta')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Comptes de démo'), findsNothing);
+    expect(find.byKey(const Key('fill-admin-phone')), findsNothing);
+    expect(find.text(AppConstants.whatsappAdminCode), findsNothing);
+    expect(find.textContaining('77 000 00 00'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('auth-phone')),
+      AppConstants.adminPhoneLocal,
+    );
+    await tester.tap(find.byKey(const Key('auth-continue')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('whatsapp-admin-code-hidden')), findsOneWidget);
+    expect(find.byKey(const Key('whatsapp-demo-code')), findsNothing);
+    expect(find.text(AppConstants.whatsappAdminCode), findsNothing);
+    expect(find.text(AppConstants.whatsappDemoCode), findsNothing);
+    expect(find.textContaining('77 000 00 00'), findsNothing);
+    expect(find.text('+221 77 000 00 00'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('auth-code')),
+      AppConstants.whatsappAdminCode,
+    );
+    await tester.tap(find.byKey(const Key('auth-verify')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Compte administrateur'), findsWidgets);
+    expect(find.text(AppConstants.whatsappAdminCode), findsNothing);
+    expect(find.textContaining('77 000 00 00'), findsNothing);
+  });
+
+  testWidgets('publication : 1 à 4 photos mock', (tester) async {
+    final repos = await _repos();
+    await _pumpApp(
+      tester,
+      auth: repos.$1,
+      listings: repos.$2,
+      inquiries: repos.$3,
+    );
+
+    await tester.tap(find.byKey(const Key('publish-cta')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('auth-phone')), '771234567');
+    await tester.tap(find.byKey(const Key('auth-continue')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-code')),
+      AppConstants.whatsappDemoCode,
+    );
+    await tester.tap(find.byKey(const Key('auth-verify')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0/4'), findsOneWidget);
+    expect(find.byKey(const Key('create-add-photo')), findsOneWidget);
+
+    Future<void> addPhoto(String id) async {
+      await tester.tap(find.byKey(const Key('create-add-photo')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('create-photo-option-$id')));
+      await tester.pumpAndSettle();
+    }
+
+    await addPhoto('facade');
+    expect(find.text('1/4'), findsOneWidget);
+    await addPhoto('salon');
+    await addPhoto('chambre');
+    await addPhoto('cuisine');
+    expect(find.text('4/4'), findsOneWidget);
+    expect(find.byKey(const Key('create-add-photo')), findsNothing);
+
+    await tester.tap(find.byTooltip('Supprimer').first);
+    await tester.pumpAndSettle();
+    expect(find.text('3/4'), findsOneWidget);
+    expect(find.byKey(const Key('create-add-photo')), findsOneWidget);
   });
 }

@@ -1,3 +1,5 @@
+import '../constants/app_constants.dart';
+
 /// Numéros mobiles sénégalais (préfixe 7x).
 String senegalLocalDigits(String input) {
   final digits = input.replaceAll(RegExp(r'\D'), '');
@@ -17,4 +19,15 @@ String formatSenegalPhone(String input) {
 String senegalWhatsAppDigits(String input) {
   final digits = input.replaceAll(RegExp(r'\D'), '');
   return digits.startsWith('221') ? digits : '221$digits';
+}
+
+bool isReservedAdminPhone(String phone) =>
+    senegalLocalDigits(phone) == AppConstants.adminPhoneLocal;
+
+/// Affichage partiel pour les listes admin (jamais le numéro admin).
+String maskSenegalPhone(String phone) {
+  if (isReservedAdminPhone(phone)) return '•••••••••';
+  final local = senegalLocalDigits(phone);
+  if (local.length != 9) return '•• ••• •• ••';
+  return '${local.substring(0, 2)} ••• ${local.substring(5, 7)} ${local.substring(7)}';
 }
