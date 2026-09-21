@@ -32,6 +32,11 @@ class AuthRepository extends ChangeNotifier {
       currentUser != null &&
       (currentUser!.isAdmin || currentUser!.freeListingsRemaining > 0);
 
+  List<AppUser> get advertisers =>
+      _users.values.where((user) => !user.isAdmin).toList(growable: false);
+
+  AppUser? byPhone(String phone) => _users[senegalLocalDigits(phone)];
+
   Future<void> load() async {
     _preferences ??= await SharedPreferences.getInstance();
     _users
@@ -119,6 +124,51 @@ class AuthRepository extends ChangeNotifier {
     await _persist();
     notifyListeners();
     return ListingSlot.paid;
+  }
+
+  Future<void> updateProfile({
+    String? displayName,
+    String? whatsapp,
+    String? otherContact,
+    String? address,
+    String? city,
+  }) async {
+    final user = currentUser;
+    if (user == null || user.isAdmin) return;
+    await _saveUser(
+      user.copyWith(
+        displayName: displayName,
+        whatsapp: whatsapp,
+        otherContact: otherContact,
+        address: address,
+        city: city,
+      ),
+    );
+  }
+
+  Future<bool> activateStorySubscription({DateTime? from}) async {
+    final user = currentUser;
+    if (user == null || user.isAdmin) return false;
+    final clock = from ?? DateTime.now();
+    final currentEnd = user.storySubscriptionUntil;
+    final start = currentEnd != null && currentEnd.isAfter(clock)
+        ? currentEnd
+        : clock;
+    await _saveUser(
+      user.copyWith(
+        storySubscriptionUntil: start.add(
+          const Duration(days: AppConstants.storySubscriptionDays),
+        ),
+      ),
+    );
+    return true;
+  }
+
+  Future<void> _saveUser(AppUser user) async {
+    currentUser = user;
+    _users[senegalLocalDigits(user.phone)] = user;
+    await _persist();
+    notifyListeners();
   }
 
   Future<void> logout() async {

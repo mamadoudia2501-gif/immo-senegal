@@ -54,13 +54,16 @@ CTA **Publier une annonce** (accueil et profil) : mène à l’inscription si vo
 
 ## Fonctionnalités du MVP
 
-- **Accueil** : catégories Location / Vente / Terrain, biens en vedette, villes populaires, publication
+- **Accueil** : catégories Location / Vente / Terrain, **statuts / stories** (anneaux), biens en vedette, villes populaires, publication
+- **Statuts** : stories image/vidéo mock, expiration **24 h**, abonnement annonceur **2 000 FCFA / mois** (30 jours, mock), validation admin avant visibilité publique
+- **Profil annonceur** : page publique (tél., WhatsApp, adresse) à compléter après inscription
 - **Recherche** : Location / Vente avec type de bien (appartement, villa, studio…), typologie **F2–F6** ou style de villa, loyer mensuel ou prix de vente en FCFA, ville (Dakar, Pikine, Rufisque…) et annonces récentes
-- **Fiche bien** : détails, courtier associé, bouton **Faire une demande**
+- **Fiche bien** : détails, courtier associé, bouton **Faire une demande**, lien vers le profil de l’annonceur
 - **Courtiers** : annuaire, fiche, appel, WhatsApp (lien mock) et e-mail
 - **Demandes** : formulaire (nom, téléphone sénégalais, message) enregistré **localement**
-- **Profil** : visiteur, annonceur (quota) ou admin, langue FR, devise FCFA
+- **Profil** : visiteur, annonceur (quota, abo stories) ou admin, langue FR, devise FCFA
 - **Publication** : formulaire terrain / location / vente, **1 à 4 photos** mock, quota puis paiement mock
+- **Admin** : modération des annonces, liste des annonceurs, file des demandes de story
 
 Les photos des annonces du catalogue d’exemple sont des **placeholders** colorés. Les annonces publiées stockent jusqu’à 4 photos mock (vues prédéfinies). Session, quota et annonces utilisateur sont persistés avec `shared_preferences`.
 
@@ -76,7 +79,7 @@ lib/
     mock/sample_data.dart   # Annonces et courtiers d’exemple
     repositories/           # Accès données (mock + persistance locale)
   features/
-    home / search / listings / brokers / inquiries / profile / auth / admin / shell
+    home / search / listings / brokers / inquiries / profile / auth / admin / stories / shell
   shared/widgets/           # Cartes, badges, CTA publication
 ```
 

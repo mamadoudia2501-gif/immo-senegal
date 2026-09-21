@@ -1,5 +1,57 @@
+import '../models/app_user.dart';
 import '../models/broker.dart';
 import '../models/listing.dart';
+import '../models/story.dart';
+
+const sampleAdvertisers = <AdvertiserProfile>[
+  AdvertiserProfile(
+    phone: '+221 77 111 22 33',
+    displayName: 'Awa Ndiaye',
+    whatsapp: '+221 77 111 22 33',
+    otherContact: 'awa.ndiaye@immo.sn',
+    address: 'Sacré-Cœur 3, villa 12',
+    city: 'Dakar',
+  ),
+  AdvertiserProfile(
+    phone: '+221 76 222 33 44',
+    displayName: 'Cheikh Fall',
+    whatsapp: '+221 76 222 33 44',
+    address: 'Thiès Nord, près du marché',
+    city: 'Thiès',
+  ),
+];
+
+List<Story> buildSampleStories(DateTime now) {
+  return [
+    Story(
+      id: 'st-sample-1',
+      authorPhone: sampleAdvertisers[0].phone,
+      media: StoryMedia.catalog[0],
+      caption: 'Visite ce matin à Sacré-Cœur — F3 lumineux.',
+      status: StoryStatus.approved,
+      createdAt: now.subtract(const Duration(hours: 2)),
+      reviewedAt: now.subtract(const Duration(hours: 2)),
+    ),
+    Story(
+      id: 'st-sample-2',
+      authorPhone: sampleAdvertisers[0].phone,
+      media: StoryMedia.catalog[4],
+      caption: 'Petite visite vidéo de la villa.',
+      status: StoryStatus.approved,
+      createdAt: now.subtract(const Duration(hours: 5)),
+      reviewedAt: now.subtract(const Duration(hours: 4)),
+    ),
+    Story(
+      id: 'st-sample-3',
+      authorPhone: sampleAdvertisers[1].phone,
+      media: StoryMedia.catalog[1],
+      caption: 'Remise des clés à Thiès Nord.',
+      status: StoryStatus.approved,
+      createdAt: now.subtract(const Duration(hours: 8)),
+      reviewedAt: now.subtract(const Duration(hours: 7)),
+    ),
+  ];
+}
 
 const sampleBrokers = <Broker>[
   Broker(

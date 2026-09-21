@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/launchers.dart';
+import '../../core/utils/phone.dart';
 import '../../data/models/listing.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/broker_repository.dart';
 import '../../data/repositories/listing_repository.dart';
+import '../../data/repositories/story_repository.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/listing_gallery.dart';
 import '../../shared/widgets/listing_photo_placeholder.dart';
@@ -119,13 +122,32 @@ class ListingDetailScreen extends StatelessWidget {
                       color: AppColors.ink,
                     ),
                   ),
-                  if (listing.publisherPhone != null) ...[
+                  if (listing.publisherPhone != null &&
+                      !isReservedAdminPhone(listing.publisherPhone!)) ...[
                     const SizedBox(height: 28),
                     Text('Annonceur', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 8),
-                    Text(
-                      listing.publisherPhone!,
-                      style: theme.textTheme.titleMedium,
+                    Builder(
+                      builder: (context) {
+                        final profile = resolveAdvertiserProfile(
+                          phone: listing.publisherPhone!,
+                          registered: context.read<AuthRepository>().byPhone(
+                            listing.publisherPhone!,
+                          ),
+                        );
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          onTap: () => context.push(
+                            '/annonceur/${senegalLocalDigits(listing.publisherPhone!)}',
+                          ),
+                          title: Text(
+                            profile?.displayName ?? 'Annonceur',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          subtitle: const Text('Voir le profil public'),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                        );
+                      },
                     ),
                     if (listing.wasPaid)
                       const Padding(

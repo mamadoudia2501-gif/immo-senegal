@@ -15,6 +15,7 @@ import '../../shared/widgets/pressable.dart';
 import '../../shared/widgets/shimmer.dart';
 import '../search/listing_filter_controller.dart';
 import '../shell/catalog_ready.dart';
+import '../stories/stories_strip.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -49,6 +50,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SliverToBoxAdapter(child: StoriesStrip()),
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Explorer par type',

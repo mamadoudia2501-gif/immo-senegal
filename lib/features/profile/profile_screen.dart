@@ -136,6 +136,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: const Icon(Icons.add_home_work_outlined),
               label: const Text('Publier une annonce'),
             ),
+            if (!user.isAdmin) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const Key('profile-edit-cta'),
+                onPressed: () => context.push('/profil/completer'),
+                icon: const Icon(Icons.badge_outlined),
+                label: Text(
+                  user.profileComplete
+                      ? 'Modifier mon profil public'
+                      : 'Compléter mon profil',
+                ),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const Key('profile-story-cta'),
+                onPressed: () => context.push('/statuts/nouveau'),
+                icon: const Icon(Icons.auto_awesome_outlined),
+                label: const Text('Publier un statut'),
+              ),
+              const SizedBox(height: 12),
+              _QuotaCard(
+                key: const Key('story-sub-label'),
+                title: user.hasActiveStorySubscription()
+                    ? 'Stories : abonnement actif'
+                    : 'Stories : sans abonnement',
+                body: user.hasActiveStorySubscription()
+                    ? 'Vous pouvez envoyer des statuts (validation admin, 24 h).'
+                    : 'Abonnement mock ${formatFcfa(AppConstants.storySubscriptionFcfa)} / mois pour publier des statuts.',
+              ),
+            ],
             if (user.isAdmin) ...[
               const SizedBox(height: 10),
               OutlinedButton.icon(
@@ -143,6 +173,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () => context.push('/admin/annonces'),
                 icon: const Icon(Icons.admin_panel_settings_outlined),
                 label: const Text('Modérer les annonces'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const Key('admin-advertisers-cta'),
+                onPressed: () => context.push('/admin/annonceurs'),
+                icon: const Icon(Icons.groups_outlined),
+                label: const Text('Voir les annonceurs'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const Key('admin-stories-cta'),
+                onPressed: () => context.push('/admin/stories'),
+                icon: const Icon(Icons.auto_awesome_outlined),
+                label: const Text('Demandes de statut'),
               ),
             ],
             const SizedBox(height: 10),

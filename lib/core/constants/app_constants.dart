@@ -19,6 +19,11 @@ abstract final class AppConstants {
   static const minListingPhotos = 1;
   static const maxListingPhotos = 4;
 
+  /// Abonnement stories / statut (paiement mock).
+  static const storySubscriptionFcfa = 2000;
+  static const storySubscriptionDays = 30;
+  static const storyTtlHours = 24;
+
   static String otpForLocalPhone(String localDigits) =>
       localDigits == adminPhoneLocal ? whatsappAdminCode : whatsappDemoCode;
 
